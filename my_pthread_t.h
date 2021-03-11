@@ -32,7 +32,7 @@ typedef enum{
 	FINISHED
 }my_pthread_state;
 
-// typedef uint my_pthread_t;
+typedef long int my_pthread_t;
 typedef unsigned long address_t;
 
 typedef void (*th_executable_func)(void *arg);
@@ -46,7 +46,7 @@ typedef struct threadControlBlock {
 	my_pthread_state state; //thread state
 	void *retVal; //return value from the function
 	int waiting_id; //Thread id of the thread waiting on this thread
-} my_pthread_t; 
+} TCB; 
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {

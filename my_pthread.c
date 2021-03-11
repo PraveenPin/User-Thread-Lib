@@ -25,7 +25,7 @@ void Start_Thread(void *(*start)(void *), void *arg)
 	my_pthread_exit(retVal);
 }
 
-void freeThread(my_pthread_t *threadToFree){
+void freeThread(TCB *threadToFree){
 	if(threadToFree != NULL){
 		free(threadToFree->stack);
 		free(threadToFree->context);
@@ -34,11 +34,11 @@ void freeThread(my_pthread_t *threadToFree){
 }
 
 /* create a new thread */
-int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
+int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
 		
 	if(threadCount == 0){
 		//creating main user thread
-		thread = (my_pthread_t*)malloc(sizeof(my_pthread_t));
+		TCB *thread = (TCB*)malloc(sizeof(TCB));
 		if(thread == NULL){
 			fprintf(stderr, "Failure to allocate memory for tmain thread");
 			return -1;
@@ -56,6 +56,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 			return -1;
 		}
 		thread->waiting_id = -1;
+		*tid = thread->id;
 		thread->state = READY;
 		thread->stack = thread->context->uc_stack.ss_sp;
 		addToQueue(thread, &queue[0]);
@@ -65,13 +66,13 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	}
 	printf("\n** Later Threads Created**\n");
 
-	thread = (my_pthread_t*)malloc(sizeof(my_pthread_t));
+	TCB *thread = (TCB*)malloc(sizeof(TCB));
 	if(thread == NULL){
-		fprintf(stderr, "Failure to allocate memory for thread my_pthread_t");
+		fprintf(stderr, "Failure to allocate memory for TCB of thread");
 		return -1;
 	}
 
-	//Intialise my_pthread_t
+	//Intialise TCB
 	thread->context = (ucontext_t*)malloc(sizeof(ucontext_t));
 	if(thread->context == NULL){
 		fprintf(stderr, "Failure to allocate memory for thread context");
@@ -98,8 +99,10 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	thread->context->uc_stack.ss_flags = 0;
 	thread->context->uc_link = 0;
 
+	*tid = thread->id;
+
 	addToQueue(thread, &queue[0]);
-	printf("\n** Adding to Queue: %p** \n", queue[0].back);
+	printf("\n** Adding Thread %d to Queue: %p** \n", thread->id,queue[0].back);
 
 	makecontext(thread->context, (void(*)(void))Start_Thread,2,function, arg);
 
@@ -118,20 +121,22 @@ int my_pthread_yield() {
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
 	printf("\n** Before Exit**\n");
-	my_pthread_t* running = Get_RunningThread();
+	TCB* running = Get_RunningThread();
 	if(running->id == 0){ //main thread
 		exit(0);
 	}
 	running->retVal = value_ptr;
 	printf("Inside exit function -> value_ptr-> %d\n",*(int *)value_ptr);
-	my_pthread_t* threadToFree = running;
+	TCB* threadToFree = running;
 	my_pthread_yield();
-	freeThread(threadToFree); //if this causes prob, use global var
+	 //if this causes prob, use global var
 };
 
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) {
-	//
+	//interrupt disable
+	
+	//interrupt enable
 	return 0;
 };
 

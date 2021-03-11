@@ -6,7 +6,7 @@
 #include "queue.h"
 #include "my_pthread_t.h"
 
-int addToQueue(my_pthread_t *thread, Queue *queue){
+int addToQueue(TCB *thread, Queue *queue){
     if(queue->front == 0){
         queue->front = malloc(sizeof(struct Node));
         queue->front->thread = thread;
@@ -26,7 +26,7 @@ int addToQueue(my_pthread_t *thread, Queue *queue){
 
 
 
-int removeFromQueue(Queue *queue, my_pthread_t **thread){
+int removeFromQueue(Queue *queue, TCB **thread){
     if(queue->front == 0){
         return 0;
     }

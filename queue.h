@@ -4,7 +4,7 @@
 #include "my_pthread_t.h"
 
 struct Node{
-    my_pthread_t *thread;
+    TCB *thread;
     struct Node *next;
 };
 
@@ -13,9 +13,9 @@ typedef struct{
     struct Node *back;
 }Queue;
 
-int addToQueue(my_pthread_t* thread, Queue *queue);
+int addToQueue(TCB* thread, Queue *queue);
 
-int removeFromQueue(Queue *queue, my_pthread_t **thread);
+int removeFromQueue(Queue *queue, TCB **thread);
 
 int isQueueEmpty(Queue *queue);
 
