@@ -6,6 +6,9 @@
 // username of iLab:
 // iLab Server:
 
+#include <sys/time.h>
+#include<signal.h>
+
 #include "my_pthread_t.h"
 #include "queue.h"
 
@@ -155,3 +158,45 @@ int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
 	return 0;
 };
 
+void interrupt_enable(void){
+    sigset_t newSignal;
+    sigemptyset(&newSignal);
+    sigaddset(&newSignal, SIGVTALRM);
+    sigprocmask(SIG_UNBLOCK, &newSignal, NULL);
+};
+
+void interrupt_disable(void){
+    sigset_t newSignal;
+    sigemptyset(&newSignal);
+    sigaddset(&newSignal, SIGVTALRM);
+    sigprocmask(SIG_BLOCK, &newSignal, NULL);
+};
+
+static void signal_handler(int signal_no){
+    //my_pthread_yield();
+    printf("signal handler get called ");
+};
+
+
+void interrupts_start(void){
+    printf("interrupts");
+    struct sigaction sa;
+    struct itimerval it;
+    
+    sa.sa_handler = signal_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if(sigaction(SIGVTALRM, &sa, NULL)){
+        fprintf(stderr, "Error in sigaction ");
+        exit(1);
+    }
+
+    it.it_value.tv_sec = 0;
+    it.it_value.tv_usec = 1000000/40;
+    it.it_interval.tv_sec = 0;
+    it.it_interval.tv_usec = 1000000/40;
+    if(setitimer(ITIMER_VIRTUAL, &it, NULL)){
+        fprintf(stderr, "error in setting up timer");
+        exit(1);
+    }
+};
