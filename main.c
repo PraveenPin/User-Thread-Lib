@@ -73,6 +73,7 @@ int main(int argc, const char * argv[]) {
     my_pthread_create(&t4, NULL, &thread4,NULL);
     gettimeofday(&end, NULL);
     delta = (((end.tv_sec  - start.tv_sec)*1000) + ((end.tv_usec - start.tv_usec)*0.001));
+    // sleep(10);
     printf("Execution time in Milliseconds: %f\n",delta);
     printf("Ending main!\n");
     return 0;

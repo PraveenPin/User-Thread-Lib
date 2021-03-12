@@ -2,6 +2,7 @@
 #include<inttypes.h>
 #include<stdlib.h>
 #include<unistd.h>
+#define _XOPEN_SOURCE 600
 
 #include "queue.h"
 #include "my_pthread_t.h"
