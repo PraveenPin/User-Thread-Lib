@@ -183,7 +183,8 @@ void interrupts_start(void){
     struct sigaction sa;
     struct itimerval it;
     
-    sa.sa_handler = signal_handler;
+    memset(&sa, 0, sizeof (sa));
+    sa.sa_handler = &signal_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     if(sigaction(SIGVTALRM, &sa, NULL)){
