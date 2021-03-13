@@ -91,14 +91,14 @@ int findMaxPriorityQueue() {
 void scheduler(int signum){
 	clock_gettime (CLOCK_REALTIME, (&(&queue[currentQueue])->front->thread->finish)); 
 	cycle_counter++;
-	//printf("Cycle cunter=%d\n",cycle_counter);
+	printf("Cycle cunter=%d\n",cycle_counter);
 	sigset_t s;
 	sigaddset(&s, SIGALRM);
 	sigprocmask(SIG_BLOCK, &s, NULL);
 	TCB *temp;	
 	currentThread = (&queue[currentQueue])->front->thread;
 	if(currentThread->firstCycle) {
-		//~ printf("First cycle\n");
+		printf("First cycle\n");
 		currentThread->firstCycle=0;
 	}
 	else {
@@ -114,8 +114,8 @@ void scheduler(int signum){
 		 currentThread->timeSpentSec += secs;
 		 currentThread->timeSpentMsec += msecs;	
 	}
-	//~ printf("Time spent in secs %lf\n",currentThread->timeSpentSec);
-	//~ printf("Time spent in Millisecs %lf\n",currentThread->timeSpentMsec);
+	printf("Time spent in secs %lf\n",currentThread->timeSpentSec);
+	printf("Time spent in Millisecs %lf\n",currentThread->timeSpentMsec);
 	thisQueueQuanta=BASE_QUEUE_QUANTA * (currentQueue + 1);
 	tout_val.it_value.tv_sec = 0; /* set timer for "INTERVAL (10) seconds */
 	tout_val.it_value.tv_usec = thisQueueQuanta;
@@ -139,12 +139,12 @@ void scheduler(int signum){
 			if ((isYield==1) && (currentThread->isWaiting)==1) {	
 				(currentThread->yieldCount)++;
 				addToQueue(temp, &queue);
-				//~ printf("Removing from ready queue and adding to the wait queue\n");
+				printf("Removing from ready queue and adding to the wait queue\n");
 			}
 			else if ((isYield==1) && (currentThread->timeSpentMsec)<=0.002) {	
 				(currentThread->yieldCount)++;
 				addToQueue(temp, &queue[currentQueue]);
-				//~ printf("Keeping thread %d it at the same priority\n",currentThread->id);
+				printf("Keeping thread %d it at the same priority\n",currentThread->id);
 			}
 			else {
 				int addCurrentToQueue = currentQueue==2 ? 2 : currentQueue+1;
@@ -153,16 +153,16 @@ void scheduler(int signum){
 					currentThread->yieldCount=0;
 				}
 				addToQueue(temp, &queue[addCurrentToQueue ]);
-				//~ printf("changing the priority to queue %d of thread %d\n", addCurrentToQueue, currentThread->id);
+				printf("changing the priority to queue %d of thread %d\n", addCurrentToQueue, currentThread->id);
 			}
 			isYield=0;		
 	}
 	int nextQueue= findMaxPriorityQueue();	
-	//printf("currentQueue: %d Current thread: %d\n",currentQueue, currentThread->id);
+	printf("currentQueue: %d Current thread: %d\n",currentQueue, currentThread->id);
 	currentQueue = nextQueue;
 	nextThread = queue[nextQueue].front->thread;
-	//printf("nextQueue: %d Next Thread: %d\n",nextQueue, nextThread->id);
-	//printf("\n====================\n");
+	printf("nextQueue: %d Next Thread: %d\n",nextQueue, nextThread->id);
+	printf("\n====================\n");
 	setitimer(ITIMER_REAL, &tout_val,0);
 	swapcontext(&(currentThread->context),&(nextThread->context));
 	clock_gettime (CLOCK_REALTIME, (&(&queue[currentQueue])->front->thread->start)); 
@@ -172,14 +172,15 @@ void scheduler(int signum){
 /* create a new thread */
 int my_pthread_create(TCB * tid, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
 	
-
 	if(threadCount == 0){
 		//creating main user thread
+
 		TCB *thread = (TCB*)malloc(sizeof(TCB));
 		if(thread == NULL){
 			fprintf(stderr, "Failure to allocate memory for tmain thread");
 			return -1;
 		}
+
 		thread->id = threadCount++;
 		
 		thread->context = (ucontext_t*)malloc(sizeof(ucontext_t));
@@ -193,15 +194,14 @@ int my_pthread_create(TCB * tid, pthread_attr_t * attr, void *(*function)(void*)
 			return -1;
 		}
 		thread->waiting_id = -1;
-		*ids = thread->id;
+		tid = thread->id;
 		thread->state = READY;
 		thread->stack = thread->context->uc_stack.ss_sp;
 		addToQueue(thread, &queue[0]);
 		//set signal handler
 		//init scheduler
-		// scheduler();
-		signal(SIGALRM, scheduler);
-
+		// signal(SIGALRM, scheduler);
+		scheduler(SIGALRM);
 		printf("\n** First Thread Created**\n");
 	}
 	printf("\n** Later Threads Created**\n");
@@ -249,8 +249,7 @@ int my_pthread_create(TCB * tid, pthread_attr_t * attr, void *(*function)(void*)
 	thread->context->uc_stack.ss_size = STACK_SIZE;
 	thread->context->uc_stack.ss_flags = 0;
 	thread->context->uc_link = 0;
-
-	*ids = thread->id;
+	tid = thread->id;
 
 	addToQueue(thread, &queue[0]);
 	printf("\n** Adding Thread %d to Queue: %p** \n", thread->id,queue[0].back);
@@ -267,8 +266,8 @@ int my_pthread_yield() {
 
 	//if running thread's state is FINISHED then notify the waiting process 
 	isYield = 1;
-	signal(SIGALRM, scheduler);
-	// raise(SIGALRM);
+	printf("yield........\n");
+	raise(SIGALRM);
 	return 0;
 };
 
@@ -282,16 +281,10 @@ void my_pthread_exit(void *value_ptr) {
 	running->retVal = value_ptr;
 	printf("Inside exit function -> value_ptr-> %d\n",*(int *)value_ptr);
 	TCB* threadToFree = running;
+	printf("exit........\n");
 	my_pthread_yield();
 	 //if this causes prob, use global var
 };
-
-static void interruptDisable () {
-	interruptsAreDisabled = 1;
-}
-static void interruptEnable () {
-	interruptsAreDisabled = 0;
-}
 
 /* wait for thread termination */
 int my_pthread_join(TCB thread, void **value_ptr) {
