@@ -284,7 +284,17 @@ int my_pthread_join(my_pthread_t tid, void **value_ptr) {
 
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
-	return 0;
+	mutex = ( my_pthread_mutex_t *) malloc(sizeof( my_pthread_mutex_t));
+	if(mutex == NULL){
+		printf("Error allocating memory for Mutex block \n");
+		return -1;
+	}
+	if(mutex->isLocked == 1)
+		return -1;
+	
+    mutex->isLocked = 0;
+    mutex->mutexattr = mutexattr;
+    return 0;
 };
 
 /* aquire the mutex lock */
@@ -299,5 +309,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-	return 0;
+	my_pthread_mutex_unlock(mutex);
+    mutex = NULL;
+    return 0;
 };
