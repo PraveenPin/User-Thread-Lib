@@ -22,20 +22,18 @@
 
 #define STACK_SIZE 32768
 #define NUMBER_OF_LEVELS 3
+#define MAX_THREADS 128
 
 typedef enum{
 	INIT,
 	READY,
 	RUNNING,
-	SUSPENDED,
+	WAITING,
 	BLOCKED,
 	FINISHED
 }my_pthread_state;
 
 typedef long int my_pthread_t;
-typedef unsigned long address_t;
-
-typedef void (*th_executable_func)(void *arg);
 
 typedef struct threadControlBlock {
 	char my_pthread_name[31]; //name for a thread if required

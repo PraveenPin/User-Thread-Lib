@@ -19,4 +19,8 @@ int removeFromQueue(Queue *queue, TCB **thread);
 
 int isQueueEmpty(Queue *queue);
 
+void stateOfQueue(Queue *queue);
+
+void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread);
+
 #endif

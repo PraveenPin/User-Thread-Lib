@@ -1,8 +1,10 @@
+#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include "my_pthread_t.h"
 #include "queue.h"
 #include <unistd.h>
 #include <sys/time.h>
+#include <signal.h>
 
 
 /***
@@ -13,24 +15,32 @@
 void busyWait(int i) {
 	int j = 21474;
 	i = i < 0 ? 1 : i;
-	while (i>=0) {
-		while (j>=0) {j--;}
-		i--;
+    int k = j*j;
+    // k = k*k;
+	while (k>0) {
+        
+        if(k%10000000 == 0) {printf("Inside Thread -> %d with value k=%d\n",i,k);}
+		// sleep(5);
+        // while (j>=0) {j--;}
+		// i--;
+        k--;
 	}
+    
 }
 
-void* thread1(void*g) {
+int thread1(void*g) {
 	int i;
-    for(i = 0; i < 10; i++){
+    for(i = 0; i < 1; i++){
         busyWait(1);
         printf("This is the first Thread 1\n");
-     }
+    }
+    return 11;
 }
 
 void thread2() {
     int i;
-    for(i = 0; i < 3 ; i++) {
-        busyWait(1);
+    for(i = 0; i < 2 ; i++) {
+        busyWait(2);
         printf("This is the second Thread 2\n");
     }
     printf("Thread  2 EXITING!!!!!!!!\n");
@@ -41,8 +51,8 @@ void thread2() {
 void thread3() {
     int i;
     long j;
-    for(i = 0; i < 2 ; i++) {
-        busyWait(1);
+    for(i = 0; i < 1 ; i++) {
+        busyWait(3);
         printf("This is the third Thread 3\n");
     }
     for(i = 0; i < 4 ; i++) {
@@ -56,7 +66,7 @@ void thread3() {
 void thread4() {
 	int i;
     for(i = 0; i < 4 ; i++) {
-        busyWait(1);
+        busyWait(4);
         printf("This is the fourth Thread 4\n");
     }
 }
@@ -66,14 +76,20 @@ int main(int argc, const char * argv[]) {
 	float delta;
 	gettimeofday(&start, NULL);
 	my_pthread_t t1,t2,t3,t4;
+    int *retVal1, *retVal2, *retVal3, *retVal4;
     //Create threads
     my_pthread_create(&t1, NULL, &thread1,NULL);
     my_pthread_create(&t2, NULL, &thread2,NULL);
     my_pthread_create(&t3, NULL, &thread3,NULL);
     my_pthread_create(&t4, NULL, &thread4,NULL);
+    my_pthread_join(t1, &retVal1);
+    // my_pthread_join(t2, &retVal2);
+    // my_pthread_join(t3, &retVal3);
+    // my_pthread_join(t4, &retVal4);
+    // printf("Retvals - %d %d %d %d\n",*retVal1,*retVal2,*retVal3, *retVal4);
     gettimeofday(&end, NULL);
     delta = (((end.tv_sec  - start.tv_sec)*1000) + ((end.tv_usec - start.tv_usec)*0.001));
-    printf("Execution time in Milliseconds: %f\n",delta);
-    printf("Ending main!\n");
+    printf("Execution time in Milliseconds: %f\n",delta);    
+    printf("Ending main with return value of thread 1 -> %d\n",retVal1);
     return 0;
 }

@@ -51,3 +51,41 @@ int isQueueEmpty(Queue *queue){
     }
     return 0;
 }
+
+void stateOfQueue(Queue *queue){
+    struct Node *tempNode = queue->front;
+    while(tempNode != NULL){
+        printf("%d\t",tempNode->thread->id);
+        tempNode = tempNode->next;
+    }
+    printf("\n");
+}
+
+void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
+    struct Node *tempNode = queue->front;
+    struct Node *prevNode = NULL;
+    while(tempNode != NULL && tempNode->thread->id != tid){
+        prevNode = tempNode;
+        tempNode = tempNode->next;
+    }
+    if(tempNode != NULL && tempNode->thread->id == tid){
+        *thread = tempNode->thread;
+        if(queue->front == queue->back){
+            queue->front = 0;
+            queue->back = 0;
+        }
+        else{
+            if(tempNode == queue->front){
+                queue->front = tempNode->next;
+            }
+            else if(tempNode == queue->back){
+                queue->back = prevNode;
+            }
+            else{             
+                prevNode->next = tempNode->next;
+            }
+            free(tempNode);
+            free(prevNode);
+        }
+    }
+}
