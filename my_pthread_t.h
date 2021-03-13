@@ -46,6 +46,7 @@ typedef struct threadControlBlock {
 	my_pthread_state state; //thread state
 	void *retVal; //return value from the function
 	int waiting_id; //Thread id of the thread waiting on this thread
+    int mutex_acquired_thread_id;
 } TCB; 
 
 /* mutex struct definition */
