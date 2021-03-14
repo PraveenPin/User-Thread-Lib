@@ -13,10 +13,9 @@
  * @return 	null
  */
 void busyWait(int i) {
-	int j = 21474;
+	int j = 21474;//21474
 	i = i < 0 ? 1 : i;
     int k = j*j;
-    // k = k*k;
 	while (k>0) {
         
         if(k%10000000 == 0) {printf("Inside Thread -> %d with value k=%d\n",i,k);}
@@ -44,23 +43,16 @@ void thread2() {
         printf("This is the second Thread 2\n");
     }
     printf("Thread  2 EXITING!!!!!!!!\n");
-    int someVal = 11;
-    my_pthread_exit(&someVal);
 }
 
-void thread3() {
+int thread3() {
     int i;
-    long j;
-    for(i = 0; i < 1 ; i++) {
+    for(i = 0; i < 3 ; i++) {
         busyWait(3);
         printf("This is the third Thread 3\n");
     }
-    for(i = 0; i < 4 ; i++) {
-		for(j=0;j<1000000000;j++){}
-        my_pthread_yield();
-		printf("Thread 3 YIELDED!!\n");
-    }
     printf("Thread  3 is done!\n");
+    return 777;
 }
 
 void thread4() {
@@ -83,13 +75,13 @@ int main(int argc, const char * argv[]) {
     my_pthread_create(&t3, NULL, &thread3,NULL);
     my_pthread_create(&t4, NULL, &thread4,NULL);
     my_pthread_join(t1, &retVal1);
-    // my_pthread_join(t2, &retVal2);
-    // my_pthread_join(t3, &retVal3);
-    // my_pthread_join(t4, &retVal4);
-    // printf("Retvals - %d %d %d %d\n",*retVal1,*retVal2,*retVal3, *retVal4);
+    my_pthread_join(t2, &retVal2);
+    my_pthread_join(t3, &retVal3);
+    my_pthread_join(t4, &retVal4);
+    printf("Retvals - %d %d %d %d\n",*retVal1,*retVal2,*retVal3, *retVal4);
     gettimeofday(&end, NULL);
     delta = (((end.tv_sec  - start.tv_sec)*1000) + ((end.tv_usec - start.tv_usec)*0.001));
     printf("Execution time in Milliseconds: %f\n",delta);    
-    printf("Ending main with return value of thread 1 -> %d\n",retVal1);
+    printf("Ending main\n");
     return 0;
 }

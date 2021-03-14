@@ -42,9 +42,9 @@ typedef struct threadControlBlock {
 	int id; // thread id
 	int priority; // thread priority
 	my_pthread_state state; //thread state
-	void *retVal; //return value from the function
+	void **retVal; //return value from the function
 	int waiting_id; //Thread id of the thread waiting on this thread
-} TCB; 
+} TCB;
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {

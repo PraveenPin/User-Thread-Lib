@@ -11,8 +11,8 @@
 #include "my_pthread_t.h"
 #include "queue.h"
 
-
 #define NO_THREAD_ERROR -4
+#define CANNOT_JOIN_ERROR -5
 
 struct itimerval timer_val;
 struct sigaction act_timer;
@@ -24,13 +24,12 @@ static TCB* running;
 TCB* findThreadById(my_pthread_t id, Queue *someQueue){
 	struct Node* node = someQueue->front;
 	while(node != NULL){
-		printf("In queue :%d\n",node->thread->id);
 		if (node->thread->id == id){
-			break;
+			return node->thread;
 		}
 		node = node->next;
 	}
-	return node->thread;
+	return NULL;
 }
 
 void enableInterrupts(void){
@@ -75,9 +74,11 @@ void scheduler(int sig){
 	running->state = RUNNING;
 	if(oldThread->state == FINISHED){
 		//we have to decide whther to free this or not
+		// freeThread(oldThread);
 	}
-
-	swapcontext(oldThread->context, nextThreadToRun->context);
+	if(swapcontext(oldThread->context, nextThreadToRun->context) == -1){
+		fprintf(stderr,"Insufficient stack space left\n");
+	}
 	enableInterrupts();
 }
 
@@ -89,10 +90,11 @@ void initTimerInterrupt(){
 	sigemptyset(&act_timer.sa_mask);
 	sigaddset(&act_timer.sa_mask,SIGVTALRM);
 	if(sigaction(SIGVTALRM,&act_timer,NULL)){
-		fprintf(stderr, "Error in sigaction ");
+		fprintf(stderr, "Error in sigaction \n");
+		printf("************** Error in sigaction ************** \n");
 		exit(1);
 	}
-	
+
 	timer_val.it_value.tv_sec = 0;
 	timer_val.it_value.tv_usec = 10000000/40;
 	timer_val.it_interval.tv_usec= 1000000/40;
@@ -100,13 +102,12 @@ void initTimerInterrupt(){
 
 	if(setitimer(ITIMER_VIRTUAL, &timer_val,NULL) == -1){
 		fprintf(stderr,"Error calling setitimer for thread %d\n", running->id);
-		printf("Error in Setting Timer");
+		printf("Error in Setting Timer\n");
 	}
 }
 
 void Start_Thread(void *(*start)(void *), void *arg){
 	void *retVal = start((void *)arg);
-	// running->retVal = retVal;
 	my_pthread_exit(retVal);
 }
 
@@ -126,7 +127,7 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 		//creating main user thread
 		TCB *mainThread = (TCB*)malloc(sizeof(TCB));
 		if(mainThread == NULL){
-			fprintf(stderr, "Failure to allocate memory for main thread");
+			fprintf(stderr, "Failure to allocate memory for main thread\n");
 			return -1;
 		}
 		mainThread->id = threadCount++;
@@ -138,7 +139,7 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 		}
 
 		if(getcontext(mainThread->context) == -1){
-			fprintf(stderr,"Failure to initialise execution context");
+			fprintf(stderr,"Failure to initialise execution context\n");
 			return -1;
 		}
 		mainThread->waiting_id = -1;
@@ -154,14 +155,14 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 
 	TCB *thread = (TCB*)malloc(sizeof(TCB));
 	if(thread == NULL){
-		fprintf(stderr, "Failure to allocate memory for TCB of thread");
+		fprintf(stderr, "Failure to allocate memory for TCB of thread\n");
 		return -1;
 	}
 
 	//Intialise TCB
 	thread->context = (ucontext_t*)malloc(sizeof(ucontext_t));
 	if(thread->context == NULL){
-		fprintf(stderr, "Failure to allocate memory for thread context");
+		fprintf(stderr, "Failure to allocate memory for thread context\n");
 		return -1;
 	}
 
@@ -171,12 +172,12 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 
 	thread->stack =  malloc(STACK_SIZE);
 	if(thread->stack == NULL){
-		fprintf(stderr,"Cannot allocate memory for stack");
+		fprintf(stderr,"Cannot allocate memory for stack\n");
 		return -1;
 	}
 
 	if(getcontext(thread->context) == -1){
-		fprintf(stderr,"Failure to initialise execution context");
+		fprintf(stderr,"Failure to initialise execution context\n");
 		return -1;
 	}
 
@@ -213,7 +214,7 @@ int my_pthread_yield() {
 	}
 	printf("Raising a signal to call scheduler\n");
 	enableInterrupts();
-	raise(SIGVTALRM);
+	raise(SIGVTALRM);	
 	return 0;
 };
 
@@ -225,9 +226,10 @@ void my_pthread_exit(void *value_ptr) {
 		exit(0);
 	}
 	running->state = FINISHED;
-	
-	
 	if(running->waiting_id >= 0){
+		if(value_ptr != NULL){
+			*running->retVal = &value_ptr;
+		}
 		//loop the waiting Queue for thread and set state to ready
 		TCB* waitingThread;
 		//deleting the waiting thread in waiting queue and adding into ready queue
@@ -235,12 +237,11 @@ void my_pthread_exit(void *value_ptr) {
 		if(waitingThread == NULL){
 			printf("Some problem in accessing waiting thread %d\n", running->waiting_id);
 			//call scheduler
-			exit(1);
+			exit(1); //add some error
 		}
+		running->waiting_id = -1;
 		// stateOfQueue(&waitingQueue);
 		waitingThread->state = READY;
-		int value = (int)value_ptr;
-		running->retVal = &value;
 		addToQueue(waitingThread,&queue[0]);
 		stateOfQueue(&queue[0]);
 	}
@@ -256,15 +257,21 @@ int my_pthread_join(my_pthread_t tid, void **value_ptr) {
 	if(tid > MAX_THREADS){
 		return NO_THREAD_ERROR;
 	}
-
 	TCB* threadToWaitOn = findThreadById(tid, &queue[0]);
 	if(threadToWaitOn == NULL){
-		threadToWaitOn = findThreadById(tid, &finishedQueue);
+		threadToWaitOn = findThreadById(tid, &waitingQueue);
 		if(threadToWaitOn == NULL){
-			threadToWaitOn = findThreadById(tid, &waitingQueue);
+			threadToWaitOn = findThreadById(tid, &finishedQueue);
 			if(threadToWaitOn == NULL){
 				fprintf(stderr,"No thread with id %d to wait on in any queue\n",tid);
 				return NO_THREAD_ERROR;
+			}
+			else{
+				stateOfQueue(&finishedQueue);
+				if(threadToWaitOn->retVal != NULL){
+					*value_ptr = *threadToWaitOn->retVal;
+				}
+				return 0;
 			}
 		}
 	}
@@ -272,9 +279,17 @@ int my_pthread_join(my_pthread_t tid, void **value_ptr) {
 		fprintf(stderr,"Problem with accessing current thread\n");
 		return -1;
 	}
+	if(running->id == tid){
+		fprintf(stderr,"Cannot wait on itself\n");
+		return -1;
+	}
 	printf("Thread %d started waiting on thread %d\n",running->id,threadToWaitOn->id);
+	if(threadToWaitOn->waiting_id >= 0 ){
+		fprintf(stderr,"Some other thread has joined this thread %d\n",tid);
+		return CANNOT_JOIN_ERROR;
+	}
 	threadToWaitOn->waiting_id = running->id;
-	*value_ptr = threadToWaitOn->retVal;
+	threadToWaitOn->retVal = value_ptr;
 	running->state = WAITING;
 	my_pthread_yield();
 	//interrupt enable
