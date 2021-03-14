@@ -12,6 +12,8 @@
 #ifndef MY_PTHREAD_T_H
 #define MY_PTHREAD_T_H
 
+#define _XOPEN_SOURCE 700
+
 /* include lib header files that you need here: */
 #include <unistd.h>
 #include <sys/syscall.h>
