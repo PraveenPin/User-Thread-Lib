@@ -60,6 +60,7 @@ void thread2() {
 void thread3() {
     int i;
     long j;
+    
     for(i = 0; i < 1 ; i++) {
         busyWait(3);
         printf("This is the third Thread 3\n");
@@ -69,6 +70,7 @@ void thread3() {
         my_pthread_yield();
 		printf("Thread 3 YIELDED!!\n");
     }
+    
     printf("Thread  3 is done!\n");
 }
 
@@ -92,7 +94,7 @@ int main(int argc, const char * argv[]) {
     my_pthread_create(&t2, NULL, &thread2,NULL);
     my_pthread_create(&t3, NULL, &thread3,NULL);
     my_pthread_create(&t4, NULL, &thread4,NULL);
-    my_pthread_join(t1, &retVal1);
+    my_pthread_join(t2, &retVal2);
     // my_pthread_join(t2, &retVal2);
     // my_pthread_join(t3, &retVal3);
     // my_pthread_join(t4, &retVal4);
