@@ -366,8 +366,9 @@ int unlockTheMutex(){
 int shiftFromWaitingToRunningQueue() {
     printf("In shift from waiting to running queue function\n");
     struct Node *tempNode = waitingQueue.front;
-    struct TCB *temp = waitingQueue.front->thread;
+    // struct TCB *temp = waitingQueue.front->thread;
     while(tempNode != NULL){
+    	struct TCB *temp = tempNode ->thread;
         printf("shiftFromWaitingToRunningQueue: %d\t\n",tempNode->thread->id);
         printf("threadIdForCriticalSection %d\n", threadIdForCriticalSection);
         printf("waiting thread for current thread %d\n",tempNode -> thread -> mutex_acquired_thread_id );
