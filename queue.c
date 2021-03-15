@@ -54,6 +54,9 @@ int isQueueEmpty(Queue *queue){
 
 void stateOfQueue(Queue *queue){
     struct Node *tempNode = queue->front;
+    if(tempNode != NULL){
+        printf("Queue %d ->\t",queue->front->thread->priority);
+    }
     while(tempNode != NULL){
         printf("%d\t",tempNode->thread->id);
         tempNode = tempNode->next;

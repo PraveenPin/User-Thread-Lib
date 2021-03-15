@@ -18,7 +18,7 @@ void busyWait(int i) {
     int k = j*j;
 	while (k>0) {
         
-        if(k%10000000 == 0) {printf("Inside Thread -> %d with value k=%d\n",i,k);}
+        // if(k%10000000 == 0) {printf("Inside Thread -> %d with value k=%d\n",i,k);}
 		// sleep(5);
         // while (j>=0) {j--;}
 		// i--;
