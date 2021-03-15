@@ -69,12 +69,12 @@ void scheduler(int sig){
 		}
 	}
     
-    if(isMutexLocked == 1) {
-    	isMutexLocked = 0;
+    if(isMutexLocked == 0) {
+        printf("In if to shift threads from waiting queue to running queue that are waiting for mutex \n");
         shiftFromWaitingToRunningQueue();
     }
 	stateOfQueue(&queue[0]);
-
+    stateOfQueue(&waitingQueue);
 	TCB* nextThreadToRun;
 	removeFromQueue(&queue[0],&nextThreadToRun);
 	printf("Swapping threads %d with %d\n", oldThread->id, nextThreadToRun->id);
@@ -363,15 +363,21 @@ int unlockTheMutex(){
 }
 
 int shiftFromWaitingToRunningQueue() {
+    printf("In shift from waiting to running queue function\n");
     struct Node *tempNode = waitingQueue.front;
     while(tempNode != NULL){
-        printf("shiftFromWaitingToRunningQueue: %d\t",tempNode->thread->id);
+        printf("shiftFromWaitingToRunningQueue: %d\t\n",tempNode->thread->id);
+        printf("threadIdForCriticalSection %d\n", threadIdForCriticalSection);
+        printf("waiting thread for current thread %d\n",tempNode -> thread -> mutex_acquired_thread_id );
         if(tempNode -> thread -> mutex_acquired_thread_id == threadIdForCriticalSection){
+            printf("Inside thread removal and addition \n ");
             removeFromQueue(&waitingQueue, tempNode -> thread);
+            stateOfQueue(&waitingQueue);
             addToQueue(tempNode -> thread, &queue[0]);
         }
         tempNode = tempNode->next;
     }
+    stateOfQueue(&waitingQueue);
     stateOfQueue(&queue[0]);
     printf("\n");
     return 0;
