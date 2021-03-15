@@ -68,6 +68,7 @@ void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
         prevNode = tempNode;
         tempNode = tempNode->next;
     }
+    printf("queue->front:%d queue->back:%d tempNode:%d prevNode: %d",queue->front, queue->back, tempNode, prevNode);
     if(tempNode != NULL && tempNode->thread->id == tid){
         
         *thread = tempNode->thread;
@@ -93,18 +94,19 @@ void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
     }
 }
 
-void deleteAParticularNodeFromQueue2(int tid, Queue *queue){
+void deleteAParticularNodeFromQueue3(Queue *queue, TCB **thread){
     struct Node *tempNode = queue->front;
     struct Node *prevNode = NULL;
-    //int tid = thread -> id;
+    int tid = tempNode->thread->id;
     while(tempNode != NULL && tempNode->thread->id != tid){
         prevNode = tempNode;
         tempNode = tempNode->next;
     }
+
     if(tempNode != NULL && tempNode->thread->id == tid){
         
-        //thread = tempNode->thread;
-        
+        *thread = tempNode->thread;
+
         if(queue->front == queue->back){
             queue->front = 0;
             queue->back = 0;
@@ -115,17 +117,19 @@ void deleteAParticularNodeFromQueue2(int tid, Queue *queue){
             }
             else if(tempNode == queue->back){
                 queue->back = prevNode;
-                
             }
             else{             
                 prevNode->next = tempNode->next;
             }
-            free(tempNode);
-            free(prevNode);
+            // free(tempNode);
+            // free(prevNode);
             stateOfQueue(queue);
         }
        stateOfQueue(queue);
     }
+
 }
+
+
 
 

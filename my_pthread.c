@@ -366,20 +366,23 @@ int unlockTheMutex(){
 int shiftFromWaitingToRunningQueue() {
     printf("In shift from waiting to running queue function\n");
     struct Node *tempNode = waitingQueue.front;
-    // struct TCB *temp = waitingQueue.front->thread;
+    // struct Node *cloneNode = tempNode;
     while(tempNode != NULL){
-        printf("Thread to be deleted: %d\t\n",tempNode->thread->id);
-        //printf("waiting thread for current thread %d\n",tempNode -> thread -> mutex_acquired_thread_id );
-        if(tempNode -> thread -> mutex_acquired_thread_id == threadIdForCriticalSection){
-            printf("Inside thread removal and addition  if condition%d\n ", tempNode -> thread -> id);
-            removeFromQueue(&waitingQueue, &(tempNode -> thread));
+    	struct TCB *temp = tempNode -> thread;
+        printf("shiftFromWaitingToRunningQueue: %d\t\n",tempNode->thread->id);
+        printf("threadIdForCriticalSection %d\n", threadIdForCriticalSection);
+        printf("waiting thread for current thread %d\n",tempNode -> thread -> mutex_acquired_thread_id );
+        // if(tempNode -> thread -> mutex_acquired_thread_id == threadIdForCriticalSection){
+            printf("Inside thread removal and addition %d\n ", tempNode -> thread->id);
+            // removeFromQueue(&waitingQueue, &temp);
+            removeFromQueue(&waitingQueue, &(tempNode->thread));
+            stateOfQueue(&queue[0]);
             stateOfQueue(&waitingQueue);
-            printf("thread id %d\n", tempNode -> thread -> id);
             addToQueue(tempNode -> thread, &queue[0]);
-        }
+        // }
         tempNode = tempNode->next;
     }
-   // stateOfQueue(&waitingQueue);
+    stateOfQueue(&waitingQueue);
     stateOfQueue(&queue[0]);
     printf("\n");
     return 0;
