@@ -547,6 +547,7 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 	
     mutex->isLocked = 0;
     mutex->mutexattr = mutexattr;
+    mutex->owningThread = -1;
     printf("Mutex created");
     return 0;
 };
@@ -556,8 +557,9 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
 	printf("Check is mutex locked? %d\n", mutex -> isLocked);
     while(1){
         if(mutex -> isLocked == 1) {
-            running -> mutex_acquired_thread_id = threadIdForCriticalSection; 
+            running -> mutex_acquired_thread_id = mutex->owningThread; 
             running->state = WAITING;
+            addToList(running-> id, &(mutex -> waitingThreads));
 			printf(" ************* Waiting for mutex lock thread %d ************* \n",running->id);
             my_pthread_yield();
             // return 0;
@@ -565,7 +567,12 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
         else {
             printf("Mutex is not locked, locking mutex by thread %d\n", running ->id );
             mutex -> isLocked = 1;
-            setThreadIdForCritialSection();
+            mutex->owningThread = running -> id;
+            if(mutex->owningThread  == -1 ) {
+                fprintf(stderr,"Some error occurred in allocating mutex to thread");
+                return -1;
+            }
+	        running->hasMutex = 1;
             return 0;
         }
     }
@@ -581,9 +588,11 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 	printf("Unlocking the mutex by thread %d\n",running->id);
     
     if(mutex->isLocked == 1 && running->hasMutex == 1) {
-        mutex->isLocked = 0;
-        unlockTheMutex();
         shiftFromWaitingToReadyQueue();
+        mutex->isLocked = 0;
+        running->hasMutex = 0;
+        mutex->owningThread = -1;
+        emptyList(&(mutex -> waitingThreads));
 		return 0;
     }
 
@@ -602,18 +611,6 @@ int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
     return CANNOT_DESTORY_MUTEX_ERROR;
 };
 
-int setThreadIdForCritialSection() {
-    printf("Set thread Id for critial section\n");
-    threadIdForCriticalSection = running -> id;
-	running->hasMutex = 1;
-    printf("thread id for critical section is %d \n", threadIdForCriticalSection);
-    if(threadIdForCriticalSection == -1 ) {
-        fprintf(stderr,"Some error occurred in allocating mutex to thread");
-        return -1;
-    }
-    isMutexLocked = 1;
-}
-
 int unlockTheMutex(){
     isMutexLocked = 0;
 	running->hasMutex = 0;
@@ -621,12 +618,12 @@ int unlockTheMutex(){
     return 0;
 }
 
-void shiftFromWaitingToReadyQueue() {
+void shiftFromWaitingToReadyQueue(my_pthread_mutex_t *mutex) {
     struct Node *tempNode = waitingQueue.front;
     struct Node *prevNode = NULL;
     
     while(tempNode != NULL){
-        if(tempNode -> thread -> mutex_acquired_thread_id == threadIdForCriticalSection){			
+        if(isThisThreadInWaitingQueueForMutex(tempNode -> thread -> id, &(mutex -> waitingThreads))){			
             TCB *tempThread = tempNode -> thread;
 			//removing the mutex_acquired_thread_id
 			tempNode->thread->mutex_acquired_thread_id = -1;

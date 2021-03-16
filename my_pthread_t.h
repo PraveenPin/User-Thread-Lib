@@ -24,7 +24,7 @@
 #include <ucontext.h>
 #include <sys/time.h>
 #include <time.h>
-// #include "queue.h"
+#include "list.h"
 
 #define STACK_SIZE (1024*1024)
 #define NUMBER_OF_LEVELS 3
@@ -65,6 +65,8 @@ typedef struct my_pthread_mutex_t {
 	pthread_mutex_t *mutex;
 	int isLocked;
 	int mutexattr;
+    int owningThread;
+    List waitingThreads;
 } my_pthread_mutex_t;
 
 /* define your data structures here: */

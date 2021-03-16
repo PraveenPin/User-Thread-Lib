@@ -13,6 +13,7 @@ typedef struct{
     struct Node *back;
 }Queue;
 
+
 int addToQueue(TCB* thread, Queue *queue);
 
 int removeFromQueue(Queue *queue, TCB **thread);
