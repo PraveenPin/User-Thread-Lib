@@ -71,8 +71,11 @@ void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
         prevNode = tempNode;
         tempNode = tempNode->next;
     }
+    //printf("queue->front:%d queue->back:%d tempNode:%d prevNode: %d",queue->front, queue->back, tempNode, prevNode);
     if(tempNode != NULL && tempNode->thread->id == tid){
+        
         *thread = tempNode->thread;
+        
         if(queue->front == queue->back){
             queue->front = 0;
             queue->back = 0;
@@ -92,3 +95,6 @@ void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
         }
     }
 }
+
+
+

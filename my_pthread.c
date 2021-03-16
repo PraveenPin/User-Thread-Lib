@@ -20,8 +20,11 @@ int threadCount=0;
 static Queue queue[NUMBER_OF_LEVELS];
 static Queue waitingQueue, finishedQueue;
 static TCB* running;
+static int threadIdForCriticalSection = -1;
+static int isMutexLocked = 0;
 static int totalCyclesElapsed = 0;
 static long timeSinceLastMaintenance = 0;
+
 
 TCB* findThreadById(my_pthread_t id, Queue *someQueue){
 	struct Node* node = someQueue->front;
@@ -162,6 +165,13 @@ void scheduler(int sig){
 		scheduleMaintenance();
 	}
 
+    
+    if(isMutexLocked == 0) {
+        printf("In if to shift threads from waiting queue to running queue that are waiting for mutex \n");
+        isMutexLocked = 1;
+        shiftFromWaitingToRunningQueue();
+    }
+	
 	if(running->state == FINISHED){
 		//we have to decide whther to free this or not
 		// freeThread(oldThread);
@@ -376,7 +386,7 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 int my_pthread_yield() {
 
 	disableInterrupts();
-	printf("Thread %d is giving up CPU\n",running->id);
+	printf("Thread %d is giving up CPU state: %d\n",running->id, running->state);
 	
 	if(running->state == WAITING){
 		printf("Adding the current thread to wait queue\n");
@@ -475,20 +485,105 @@ int my_pthread_join(my_pthread_t tid, void **value_ptr) {
 
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
-	return 0;
+	mutex = ( my_pthread_mutex_t *) malloc(sizeof( my_pthread_mutex_t));
+	if(mutex == NULL){
+		printf("Error allocating memory for Mutex block \n");
+		return -1;
+	}
+	if(mutex->isLocked == 1)
+		return -1;
+	
+    mutex->isLocked = 0;
+    mutex->mutexattr = mutexattr;
+    printf("Mutex created");
+    return 0;
 };
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
-	return 0;
+	printf("Check is mutex locked? %d\n", mutex -> isLocked);
+    while(1){
+        if(mutex -> isLocked == 1) {
+            running -> mutex_acquired_thread_id = threadIdForCriticalSection; 
+            running->state = WAITING;
+            my_pthread_yield();
+            return 0;
+        }
+        else {
+            printf("Mutex is not locked, locking mutex by thread %d\n", running ->id );
+            mutex -> isLocked = 1;
+            setThreadIdForCritialSection();
+            return 0;
+        }
+    }  
 };
 
 /* release the mutex lock */
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
+    if(mutex == NULL){
+        my_pthread_mutex_init(&mutex, NULL);
+    }
+    
+    if(mutex->isLocked == 1) {
+        mutex->isLocked = 0;
+        unlockTheMutex();
+    }
 	return 0;
 };
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-	return 0;
+	my_pthread_mutex_unlock(&mutex);
+    mutex = NULL;
+    return 0;
 };
+
+int setThreadIdForCritialSection() {
+    printf("set thread Id for critial section\n");
+    threadIdForCriticalSection = running -> id;
+    printf("thread id for critical section is %d \n", threadIdForCriticalSection);
+    if(threadIdForCriticalSection == -1 ) {
+        fprintf(stderr,"Some error occurred in allocating mutex to thread");
+        return -1;
+    }
+    isMutexLocked = 1;
+}
+
+int unlockTheMutex(){
+    isMutexLocked = 0;
+    return 0;
+}
+
+void shiftFromWaitingToRunningQueue() {
+    struct Node *tempNode = waitingQueue.front;
+    struct Node *prevNode = NULL;
+    
+    while(tempNode != NULL){
+        if(tempNode -> thread -> mutex_acquired_thread_id == threadIdForCriticalSection){
+            TCB *tempThread = tempNode -> thread;
+            stateOfQueue(&waitingQueue);
+            if(waitingQueue.back == waitingQueue.front){
+				waitingQueue.front = 0;
+				waitingQueue.back = 0;
+			}
+			else{
+				if(tempNode == waitingQueue.back){
+					waitingQueue.back = prevNode;
+                    waitingQueue.back -> next = NULL;
+				}
+				else if(tempNode == waitingQueue.front){
+					waitingQueue.front = tempNode->next;
+				}
+				else{
+					prevNode->next = tempNode->next;
+				}
+			}
+            //deleteAParticularNodeFromQueue(tempNode -> thread->id, &waitingQueue, &tempThread);
+            addToQueue(tempThread, &queue[tempThread -> priority]);
+        }
+        else{
+			prevNode = tempNode;
+		}
+        tempNode = tempNode->next;  
+    }
+}

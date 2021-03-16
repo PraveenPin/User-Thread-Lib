@@ -5,10 +5,14 @@
 // name:
 // username of iLab:
 // iLab Server: 
+
+#ifndef _UTHREADLIB_H_
+#define _UTHREADLIB_H_
+
 #ifndef MY_PTHREAD_T_H
 #define MY_PTHREAD_T_H
 
-#define _GNU_SOURCE
+#define _XOPEN_SOURCE 700
 
 /* include lib header files that you need here: */
 #include <unistd.h>
@@ -45,15 +49,20 @@ typedef struct threadControlBlock {
 	my_pthread_state state; //thread state
 	void **retVal; //return value from the function
 	int waiting_id; //Thread id of the thread waiting on this thread
-	int priority; // thread priority
+
+    int mutex_acquired_thread_id;
+    int priority; // thread priority
 	double timeSpentInSeconds,timeSpentInMilliSeconds,totalTimeInSecs,totalTimeInMilliSecs;
 	struct timespec created, start,resume, finish;
 	int firstCycle;
-} TCB;
+} TCB; 
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
 	/* add something here */
+	pthread_mutex_t *mutex;
+	int isLocked;
+	int mutexattr;
 } my_pthread_mutex_t;
 
 /* define your data structures here: */
@@ -86,5 +95,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex);
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex);
+
+#endif
 
 #endif
