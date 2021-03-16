@@ -19,7 +19,8 @@ void busyWait(int i) {
     // k = k*k;
 	while (k>0) {
         
-        if(k%10000000 == 0) {printf("Inside Thread -> %d with value k=%d\n",i,k);}
+        if(k%10000000 == 0) {//printf("Inside Thread -> %d with value k=%d\n",i,k);
+        }
 		// sleep(5);
         // while (j>=0) {j--;}
 		// i--;
@@ -34,7 +35,7 @@ int thread1(void*g) {
 	int i;
     for(i = 0; i < 1; i++){
         busyWait(1);
-        printf("This is the first Thread 1\n");
+        //printf("This is the first Thread 1\n");
     }
     printf("Thread 1 is trying to release the mutex");
     my_pthread_mutex_unlock(&mutex);
@@ -48,7 +49,7 @@ void thread2() {
     printf("Thread 2 has successfully acquired the lock");
     for(i = 0; i < 2 ; i++) {
         busyWait(2);
-        printf("This is the second Thread 2\n");
+        //printf("This is the second Thread 2\n");
     }
     printf("Thread 2 is trying to unlock the mutex");
     my_pthread_mutex_unlock(&mutex);
@@ -63,22 +64,22 @@ void thread3() {
     
     for(i = 0; i < 1 ; i++) {
         busyWait(3);
-        printf("This is the third Thread 3\n");
+        //printf("This is the third Thread 3\n");
     }
     for(i = 0; i < 4 ; i++) {
 		for(j=0;j<1000000000;j++){}
         my_pthread_yield();
-		printf("Thread 3 YIELDED!!\n");
+		//printf("Thread 3 YIELDED!!\n");
     }
     
-    printf("Thread  3 is done!\n");
+    //printf("Thread  3 is done!\n");
 }
 
 void thread4() {
 	int i;
-    for(i = 0; i < 4 ; i++) {
+    for(i = 0; i < 3 ; i++) {
         busyWait(4);
-        printf("This is the fourth Thread 4\n");
+        //printf("This is the fourth Thread 4\n");
     }
 }
 

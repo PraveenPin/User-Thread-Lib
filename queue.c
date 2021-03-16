@@ -53,12 +53,14 @@ int isQueueEmpty(Queue *queue){
 }
 
 void stateOfQueue(Queue *queue){
-    struct Node *tempNode = queue->front;
-    while(tempNode != NULL){
-        printf("%d\t",tempNode->thread->id);
-        tempNode = tempNode->next;
+    if(!(queue->front == 0)) {
+        struct Node *tempNode = queue->front;
+        while(tempNode != NULL){
+            printf("%d\t",tempNode->thread->id);
+            tempNode = tempNode->next;
+        }
+        printf("\n");
     }
-    printf("\n");
 }
 
 void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
@@ -68,7 +70,7 @@ void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
         prevNode = tempNode;
         tempNode = tempNode->next;
     }
-    printf("queue->front:%d queue->back:%d tempNode:%d prevNode: %d",queue->front, queue->back, tempNode, prevNode);
+    //printf("queue->front:%d queue->back:%d tempNode:%d prevNode: %d",queue->front, queue->back, tempNode, prevNode);
     if(tempNode != NULL && tempNode->thread->id == tid){
         
         *thread = tempNode->thread;
@@ -87,31 +89,19 @@ void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
             else{             
                 prevNode->next = tempNode->next;
             }
-            free(tempNode);
-            free(prevNode);
-        printf("in if to check id existance\n");
+            //free(tempNode);
+            //free(prevNode);
+        //printf("in if to check id existance\n");
         }
     }
 }
 
-void deleteAParticularNodeFromQueue3(Queue *queue, TCB **thread){
+void deleteAParticularNodeFromQueue3(int tid, Queue *queue, TCB **thread){
     struct Node *tempNode = queue->front;
     struct Node *prevNode = NULL;
-    int tid = tempNode->thread->id;
-    while(tempNode != NULL && tempNode->thread->id != tid){
-        prevNode = tempNode;
-        tempNode = tempNode->next;
-    }
-
-    if(tempNode != NULL && tempNode->thread->id == tid){
-        
-        *thread = tempNode->thread;
-
-        if(queue->front == queue->back){
-            queue->front = 0;
-            queue->back = 0;
-        }
-        else{
+    while(tempNode != NULL ){
+        if(tempNode->thread->id == tid) {
+            *thread = tempNode->thread;
             if(tempNode == queue->front){
                 queue->front = tempNode->next;
             }
@@ -121,13 +111,11 @@ void deleteAParticularNodeFromQueue3(Queue *queue, TCB **thread){
             else{             
                 prevNode->next = tempNode->next;
             }
-            // free(tempNode);
-            // free(prevNode);
-            stateOfQueue(queue);
+            break;
         }
-       stateOfQueue(queue);
+        prevNode = tempNode;
+        tempNode = tempNode->next;
     }
-
 }
 
 
