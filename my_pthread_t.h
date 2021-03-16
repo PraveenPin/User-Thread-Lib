@@ -22,9 +22,11 @@
 #include <stdlib.h>
 #include <setjmp.h>
 #include <ucontext.h>
+#include <sys/time.h>
+#include <time.h>
 // #include "queue.h"
 
-#define STACK_SIZE 32768
+#define STACK_SIZE (1024*1024)
 #define NUMBER_OF_LEVELS 3
 #define MAX_THREADS 128
 
@@ -44,11 +46,15 @@ typedef struct threadControlBlock {
 	void *stack;
 	ucontext_t *context; // context for this thread
 	int id; // thread id
-	int priority; // thread priority
 	my_pthread_state state; //thread state
-	void *retVal; //return value from the function
+	void **retVal; //return value from the function
 	int waiting_id; //Thread id of the thread waiting on this thread
+
     int mutex_acquired_thread_id;
+    int priority; // thread priority
+	double timeSpentInSeconds,timeSpentInMilliSeconds,totalTimeInSecs,totalTimeInMilliSecs;
+	struct timespec created, start,resume, finish;
+	int firstCycle;
 } TCB; 
 
 /* mutex struct definition */
