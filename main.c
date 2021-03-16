@@ -30,12 +30,11 @@ int thread1(void*g) {
     printf("Thread 1 is trying to lock the mutex\n");
     my_pthread_mutex_lock(&mutex);
 	int i;
-    for(i = 0; i < 1; i++){
+    for(i = 0; i < 2; i++){
         busyWait(1);
+        my_pthread_mutex_unlock(&mutex);
         //printf("This is the first Thread 1\n");
     }
-    printf("Thread 1 is trying to release the mutex");
-    my_pthread_mutex_unlock(&mutex);
     return 11;
 }
 
@@ -43,12 +42,12 @@ void thread2() {
     int i;
     printf("Thread 2 is trying to lock the mutex \n");
     my_pthread_mutex_lock(&mutex);
-    printf("Thread 2 has successfully acquired the lock");
+    printf("Thread 2 has successfully acquired the lock\n");
     for(i = 0; i < 2 ; i++) {
         busyWait(2);
         //printf("This is the second Thread 2\n");
     }
-    printf("Thread 2 is trying to unlock the mutex");
+    printf("Thread 2 is trying to unlock the mutex\n");
     my_pthread_mutex_unlock(&mutex);
     printf("Thread  2 EXITING!!!!!!!!\n");
 }
@@ -91,7 +90,7 @@ int main(int argc, const char * argv[]) {
     my_pthread_join(t2, &retVal2);
     my_pthread_join(t3, &retVal3);
     my_pthread_join(t4, &retVal4);
-    printf("Retvals - %d %d %d %d\n",*retVal1,*retVal2,*retVal3, *retVal4);
+    // printf("Retvals - %d %d %d %d\n",*retVal1,*retVal2,*retVal3, *retVal4);
     
     my_pthread_mutex_destroy(&mutex);
     gettimeofday(&end, NULL);

@@ -55,6 +55,8 @@ typedef struct threadControlBlock {
 	double timeSpentInSeconds,timeSpentInMilliSeconds,totalTimeInSecs,totalTimeInMilliSecs;
 	struct timespec created, start,resume, finish;
 	int firstCycle;
+
+	int hasMutex;
 } TCB; 
 
 /* mutex struct definition */

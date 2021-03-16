@@ -10,6 +10,8 @@
 #include "my_pthread_t.h"
 #include "queue.h"
 
+#define CANNOT_DESTORY_MUTEX_ERROR -2
+#define DOES_NOT_HAVE_MUTEX_LOCK -3
 #define NO_THREAD_ERROR -4
 #define CANNOT_JOIN_ERROR -5
 #define BASE_TIME_QUANTA 25
@@ -24,7 +26,7 @@ static int threadIdForCriticalSection = -1;
 static int isMutexLocked = 0;
 static int totalCyclesElapsed = 0;
 static long timeSinceLastMaintenance = 0;
-
+int lengthOfLeastPriorityQueue = 0;
 
 TCB* findThreadById(my_pthread_t id, Queue *someQueue){
 	struct Node* node = someQueue->front;
@@ -75,13 +77,55 @@ int findMaxPriorityQueue(){
 	return -1;
 }
 
+int inheritPriority(){
+	printf("******* Executing Priority Inheritance *******\n");
+	struct Node *tempNode = waitingQueue.front;
+	while(tempNode != NULL){
+		if(tempNode->thread->mutex_acquired_thread_id > -1){
+			TCB* lockAcquiredThread = findThreadById(tempNode->thread->mutex_acquired_thread_id, &queue[NUMBER_OF_LEVELS -1]);
+			if(lockAcquiredThread != NULL && lockAcquiredThread->id == threadIdForCriticalSection 
+					&& lockAcquiredThread->hasMutex && tempNode->thread->priority < lockAcquiredThread->priority){
+					TCB *removedThread;
+					deleteAParticularNodeFromQueue(lockAcquiredThread->id, &queue[NUMBER_OF_LEVELS - 1],&removedThread);
+					if(removedThread != NULL){
+						printf("Removed Thread %d with priority %d\n",removedThread->id, removedThread->priority);
+						removedThread->priority = tempNode->thread->priority;
+						printf("Moving Thread %d from Lowest Queue to Queue %d\n",removedThread->id, removedThread->priority);					
+						addToQueue(removedThread,&queue[removedThread->priority]);
+						stateOfQueue(&queue[0]);
+					}
+			}
+		}
+		tempNode = tempNode->next;
+	}
+	return NO_THREAD_ERROR;
+}
+
 void scheduleMaintenance(){
 	printf("*********************** Calling Maintenance ***********************\n");
-	//inherit code
+	
+	inheritPriority();
+	printf("******* Executing Priority Inversion *******\n");
+	
 	struct Node *prevNode = NULL,*tempNode = queue[NUMBER_OF_LEVELS - 1].front;
 	while(tempNode != NULL){
 		TCB* currentThread = tempNode->thread;
-		if(currentThread->timeSpentInMilliSeconds > 250){
+		struct timespec currentTime;
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&currentTime);
+
+		double starvingMilliSecs,starvingSecs;
+		starvingSecs = (double)(currentTime.tv_sec - tempNode->thread->finish.tv_sec);
+		if(starvingSecs == 0){
+			starvingMilliSecs = ((double)(currentTime.tv_nsec - tempNode->thread->finish.tv_nsec))/1000000;
+		}
+		else if(starvingSecs >= 1){
+			starvingSecs = starvingSecs - 1;
+			starvingMilliSecs = ((double)((999999999 - tempNode->thread->finish.tv_nsec) + (currentTime.tv_nsec)))/1000000;
+		}
+
+		printf("Thread %d was starving for %lf secs %lf millisecs\n",tempNode->thread->id,starvingSecs,starvingMilliSecs);
+
+		if(starvingMilliSecs >= 200){
 			currentThread->priority = 0;
 			addToQueue(currentThread,&queue[currentThread->priority]);
 			printf("Inverted Priority of thread %d to 0\n",currentThread->id);
@@ -100,6 +144,7 @@ void scheduleMaintenance(){
 					prevNode->next = tempNode->next;
 				}
 			}
+			lengthOfLeastPriorityQueue--;
 		}
 		else{
 			prevNode = tempNode;
@@ -153,8 +198,8 @@ void scheduler(int sig){
 		}
 		running->timeSpentInSeconds += secs;
 		running->timeSpentInMilliSeconds += millisecs;
-		running->totalTimeInSecs += running->timeSpentInSeconds;
-		running->totalTimeInMilliSecs += running->timeSpentInMilliSeconds;
+		running->totalTimeInSecs += secs;
+		running->totalTimeInMilliSecs += millisecs;
 	}
 
 	timeSinceLastMaintenance += currentTimeSlice;
@@ -165,12 +210,11 @@ void scheduler(int sig){
 		scheduleMaintenance();
 	}
 
-    
-    if(isMutexLocked == 0) {
-        printf("In if to shift threads from waiting queue to running queue that are waiting for mutex \n");
-        isMutexLocked = 1;
-        shiftFromWaitingToRunningQueue();
-    }
+    // if(isMutexLocked == 0) {
+    //     printf("In if to shift threads from waiting queue to running queue that are waiting for mutex \n");
+    //     isMutexLocked = 1;
+    //     shiftFromWaitingToReadyQueue();
+    // }
 	
 	if(running->state == FINISHED){
 		//we have to decide whther to free this or not
@@ -207,8 +251,11 @@ void scheduler(int sig){
 				if(oldThread->priority != (NUMBER_OF_LEVELS - 1)){
 					oldThread->priority+=1;
 					oldThread->timeSpentInSeconds = 0;
-					oldThread->timeSpentInMilliSeconds = 0;					
-				}
+					oldThread->timeSpentInMilliSeconds = 0;	
+					if(oldThread->priority == (NUMBER_OF_LEVELS - 1)){
+						lengthOfLeastPriorityQueue++;
+					}
+				}				
 			}
 			addToQueue(oldThread,&queue[oldThread->priority]);
 
@@ -298,6 +345,8 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 		*tid = mainThread->id;
 		mainThread->state = RUNNING;
 		mainThread->stack = mainThread->context->uc_stack.ss_sp;
+		mainThread->mutex_acquired_thread_id = -1;
+		mainThread->hasMutex = 0;
 		mainThread->firstCycle = 1;
 		mainThread->priority = 0;
 		mainThread->timeSpentInMilliSeconds = 0;
@@ -339,6 +388,8 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 	thread->state = READY;
 	thread->id = threadCount++;
 	thread->waiting_id = -1;
+	thread->mutex_acquired_thread_id = -1;
+	thread->hasMutex = 0;
 	thread->firstCycle = 1;
 	thread->priority = 0;
 	thread->timeSpentInMilliSeconds = 0;
@@ -391,7 +442,8 @@ int my_pthread_yield() {
 	if(running->state == WAITING){
 		printf("Adding the current thread to wait queue\n");
 		//add to waiting list
-		addToQueue(running,&waitingQueue);		
+		addToQueue(running,&waitingQueue);	
+		stateOfQueue(&waitingQueue);
 	}
 	else if( running->state == FINISHED){
 		printf("Adding the current finished thread to finished queue\n");
@@ -428,7 +480,7 @@ void my_pthread_exit(void *value_ptr) {
 		// stateOfQueue(&waitingQueue);
 		waitingThread->state = READY;
 		addToQueue(waitingThread,&queue[waitingThread->priority]);
-		stateOfQueue(&queue[waitingThread->priority]);
+		// stateOfQueue(&queue[waitingThread->priority]);
 	}
 	my_pthread_yield();
 	enableInterrupts();
@@ -506,8 +558,9 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
         if(mutex -> isLocked == 1) {
             running -> mutex_acquired_thread_id = threadIdForCriticalSection; 
             running->state = WAITING;
+			printf(" ************* Waiting for mutex lock thread %d ************* \n",running->id);
             my_pthread_yield();
-            return 0;
+            // return 0;
         }
         else {
             printf("Mutex is not locked, locking mutex by thread %d\n", running ->id );
@@ -515,7 +568,8 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
             setThreadIdForCritialSection();
             return 0;
         }
-    }  
+    }
+	return 0;
 };
 
 /* release the mutex lock */
@@ -523,24 +577,35 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
     if(mutex == NULL){
         my_pthread_mutex_init(&mutex, NULL);
     }
+
+	printf("Unlocking the mutex by thread %d\n",running->id);
     
-    if(mutex->isLocked == 1) {
+    if(mutex->isLocked == 1 && running->hasMutex == 1) {
         mutex->isLocked = 0;
         unlockTheMutex();
+        shiftFromWaitingToReadyQueue();
+		return 0;
     }
-	return 0;
+
+	printf("Mutex unlock failed by Thread %d\n",running->id);
+	return DOES_NOT_HAVE_MUTEX_LOCK;
 };
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-	my_pthread_mutex_unlock(&mutex);
-    mutex = NULL;
-    return 0;
+	// my_pthread_mutex_unlock(&mutex);
+	if(!mutex->isLocked && threadIdForCriticalSection == -1){
+    	mutex = NULL;
+		return 0;
+	}
+	printf("Cannot destroy Mutex, lock is acquired by some thread\n");
+    return CANNOT_DESTORY_MUTEX_ERROR;
 };
 
 int setThreadIdForCritialSection() {
-    printf("set thread Id for critial section\n");
+    printf("Set thread Id for critial section\n");
     threadIdForCriticalSection = running -> id;
+	running->hasMutex = 1;
     printf("thread id for critical section is %d \n", threadIdForCriticalSection);
     if(threadIdForCriticalSection == -1 ) {
         fprintf(stderr,"Some error occurred in allocating mutex to thread");
@@ -551,16 +616,20 @@ int setThreadIdForCritialSection() {
 
 int unlockTheMutex(){
     isMutexLocked = 0;
+	running->hasMutex = 0;
+	threadIdForCriticalSection = -1;
     return 0;
 }
 
-void shiftFromWaitingToRunningQueue() {
+void shiftFromWaitingToReadyQueue() {
     struct Node *tempNode = waitingQueue.front;
     struct Node *prevNode = NULL;
     
     while(tempNode != NULL){
-        if(tempNode -> thread -> mutex_acquired_thread_id == threadIdForCriticalSection){
+        if(tempNode -> thread -> mutex_acquired_thread_id == threadIdForCriticalSection){			
             TCB *tempThread = tempNode -> thread;
+			//removing the mutex_acquired_thread_id
+			tempNode->thread->mutex_acquired_thread_id = -1;
             stateOfQueue(&waitingQueue);
             if(waitingQueue.back == waitingQueue.front){
 				waitingQueue.front = 0;
@@ -578,7 +647,7 @@ void shiftFromWaitingToRunningQueue() {
 					prevNode->next = tempNode->next;
 				}
 			}
-            //deleteAParticularNodeFromQueue(tempNode -> thread->id, &waitingQueue, &tempThread);
+            printf("Moving thread %d from waiting queue to Queue %d\n",tempThread -> id,tempThread -> priority);
             addToQueue(tempThread, &queue[tempThread -> priority]);
         }
         else{
