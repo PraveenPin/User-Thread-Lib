@@ -87,7 +87,7 @@ int inheritPriority(){
 					TCB *removedThread;
 					deleteAParticularNodeFromQueue(lockAcquiredThread->id, &queue[NUMBER_OF_LEVELS - 1],&removedThread);
 					if(removedThread != NULL){
-						printf("Removed Thread %d with priority %d\n",removedThread->id, removedThread->priority);
+						printf("Removed Thread %d with priority %d by thread %d\n",removedThread->id, removedThread->priority,tempNode->thread->id);
 						removedThread->priority = tempNode->thread->priority;
 						printf("Moving Thread %d from Lowest Queue to Queue %d\n",removedThread->id, removedThread->priority);					
 						addToQueue(removedThread,&queue[removedThread->priority]);
