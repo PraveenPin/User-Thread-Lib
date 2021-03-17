@@ -54,12 +54,12 @@ void thread2() {
 
 int thread3() {
     int i;
-
+    my_pthread_mutex_lock(&mutex);
     for(i = 0; i < 3 ; i++) {
         busyWait(3);
         //printf("This is the third Thread 3\n");
     }
-
+    my_pthread_mutex_unlock(&mutex);
     printf("Thread  3 is done!\n");
     return 777;
 

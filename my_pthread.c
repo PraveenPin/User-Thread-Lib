@@ -88,7 +88,7 @@ int inheritPriority(){
 					TCB *removedThread;
 					deleteAParticularNodeFromQueue(lockAcquiredThread->id, &queue[NUMBER_OF_LEVELS - 1],&removedThread);
 					if(removedThread != NULL){
-						printf("Removed Thread %d with priority %d\n",removedThread->id, removedThread->priority);
+						printf("Removed Thread %d with priority %d by thread %d\n",removedThread->id, removedThread->priority,tempNode->thread->id);
 						removedThread->priority = tempNode->thread->priority;
 						printf("Moving Thread %d from Lowest Queue to Queue %d\n",removedThread->id, removedThread->priority);					
 						addToQueue(removedThread,&queue[removedThread->priority]);
@@ -578,12 +578,10 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
         my_pthread_mutex_init(&mutex, NULL);
     }
 
-	printf("Unlocking the mutex by thread %d\n",running->id);
-    
-    if(mutex->isLocked == 1 && running->hasMutex == 1) {
+	if(mutex->isLocked == 1 && running->hasMutex == 1) {
+        shiftFromWaitingToReadyQueue();
         mutex->isLocked = 0;
         unlockTheMutex();
-        shiftFromWaitingToReadyQueue();
 		return 0;
     }
 
@@ -630,7 +628,8 @@ void shiftFromWaitingToReadyQueue() {
             TCB *tempThread = tempNode -> thread;
 			//removing the mutex_acquired_thread_id
 			tempNode->thread->mutex_acquired_thread_id = -1;
-            stateOfQueue(&waitingQueue);
+            printf("Waiting Queue\t");
+			stateOfQueue(&waitingQueue);
             if(waitingQueue.back == waitingQueue.front){
 				waitingQueue.front = 0;
 				waitingQueue.back = 0;
