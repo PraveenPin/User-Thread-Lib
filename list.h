@@ -2,22 +2,27 @@
 #define List_H
 
 struct ListNode{
-    int thread;
+    int tid;
     struct ListNode *next;
 };
 
-typedef struct{
+typedef struct {
     struct ListNode *front;
     struct ListNode *back;
-}List;
+}TidQueue;
 
-int addToList(int thread, List *list);
+typedef struct {
+    struct Node *front;
+    struct Node *back;
+}TCBQueue;
 
-int isThisThreadInWaitingQueueForMutex(int id, List *waitingThreads);
+int addToTidQueue(int tid, TidQueue *waitingThreads);
 
-void emptyList(List *waitingThreads);
+int isThisThreadWaitingForMutex(int tid, TidQueue *waitingThreads);
 
-void stateOfList(List *list);
+void emptyTidQueue(TidQueue *waitingThreads);
+
+void stateOfTidQueue(TidQueue *waitingThreads);
 
 //int removeFromList(List *List, int **thread);
 

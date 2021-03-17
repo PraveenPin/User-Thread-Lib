@@ -24,8 +24,6 @@ int addToQueue(TCB *thread, Queue *queue){
     return 1;
 }
 
-
-
 int removeFromQueue(Queue *queue, TCB **thread){
     if(queue->front == 0){
         return 0;

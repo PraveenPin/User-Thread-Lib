@@ -20,7 +20,6 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <setjmp.h>
 #include <ucontext.h>
 #include <sys/time.h>
 #include <time.h>
@@ -66,7 +65,7 @@ typedef struct my_pthread_mutex_t {
 	int isLocked;
 	int mutexattr;
     int owningThread;
-    List waitingThreads;
+    TidQueue waitingThreads;
 } my_pthread_mutex_t;
 
 /* define your data structures here: */
