@@ -43,3 +43,16 @@ void emptyList(List *waitingThreads){
         tempNode=buf;
     }
 }
+
+
+void stateOfList(List *list){
+    struct ListNode *tempNode = list->front;
+    if(tempNode != NULL){
+        printf("Waiting threads: \t");
+    }
+    while(tempNode != NULL){
+        printf("%d\t",tempNode->thread);
+        tempNode = tempNode->next;
+    }
+    printf("\n");
+}

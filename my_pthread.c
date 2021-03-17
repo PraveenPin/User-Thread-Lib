@@ -573,6 +573,7 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
                 return -1;
             }
 	        running->hasMutex = 1;
+            stateOfList(&(mutex -> waitingThreads));
             return 0;
         }
     }

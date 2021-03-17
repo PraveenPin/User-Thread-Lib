@@ -17,6 +17,8 @@ int isThisThreadInWaitingQueueForMutex(int id, List *waitingThreads);
 
 void emptyList(List *waitingThreads);
 
+void stateOfList(List *list);
+
 //int removeFromList(List *List, int **thread);
 
 //int isListEmpty(List *list);
