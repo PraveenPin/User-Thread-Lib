@@ -1,11 +1,9 @@
 // File:	my_pthread.c
-// Author:	Yujie REN
-// Date:	09/23/2017
-
-// name:
+// Date:	3/19/2021
+// Author: Omkar Dubas, Praveen Pinjala, Shika Vyaghra
 // username of iLab:
 // iLab Server:
-#define _XOPEN_SOURCE 700
+
 #include <signal.h>
 #include "my_pthread_t.h"
 #include "queue.h"
@@ -51,6 +49,20 @@ TCB* findThreadByIdInMLFQ(my_pthread_t id){
 		}
 	}
 	return NULL;
+}
+
+void shiftFromWaitingToReadyQueue(my_pthread_mutex_t *mutex) {
+	struct ListNode *tempNode = mutex->waitingThreads.front;
+	while(tempNode != NULL){
+		TCB *waitingThread;
+		// printf("Deleting waiting thread %d from waiting queue\n",tempNode->tid);
+		deleteAParticularNodeFromQueue(tempNode->tid,&waitingQueue,&waitingThread);
+		if(waitingThread != NULL){
+			// printf("Moving Thread %d to Queue %d\n",waitingThread->id,waitingThread->priority);
+			addToQueue(waitingThread, &queue[waitingThread->priority]);
+		}
+		tempNode = tempNode->next;
+	}
 }
 
 void enableInterrupts(void){
@@ -104,7 +116,7 @@ void scheduleMaintenance(){
 	printf("*********************** Calling Maintenance ***********************\n");
 	
 	inheritPriority();
-	printf("******* Executing Priority Inversion *******\n");
+	// printf("******* Executing Ageing *******\n");
 	
 	struct Node *prevNode = NULL,*tempNode = queue[NUMBER_OF_LEVELS - 1].front;
 	while(tempNode != NULL){
@@ -127,7 +139,7 @@ void scheduleMaintenance(){
 		if(starvingMilliSecs >= 200){
 			currentThread->priority = 0;
 			addToQueue(currentThread,&queue[currentThread->priority]);
-			printf("Inverted Priority of thread %d to 0\n",currentThread->id);
+			printf("Thread has starved more than the threshold, Inverted Priority of thread %d to 0\n",currentThread->id);
 			if(queue[NUMBER_OF_LEVELS - 1].back == queue[NUMBER_OF_LEVELS - 1].front){
 				queue[NUMBER_OF_LEVELS - 1].front = 0;
 				queue[NUMBER_OF_LEVELS - 1].back = 0;
@@ -151,10 +163,10 @@ void scheduleMaintenance(){
 		tempNode = tempNode->next;
 	}
 
-	printf("Threads in all queues\n");
-	for(int i=0;i<NUMBER_OF_LEVELS;i++){
-		stateOfQueue(&queue[i]);
-	}
+	// printf("Threads in all queues\n");
+	// for(int i=0;i<NUMBER_OF_LEVELS;i++){
+	// 	stateOfQueue(&queue[i]);
+	// }
 }
 
 void initTimerInterrupt(int i){
@@ -211,7 +223,7 @@ void scheduler(int sig){
 	
 	if(running->state == FINISHED){
 		//we have to decide whther to free this or not
-		// freeThread(oldThread);
+		freeThread(running);
 		int nextPreferredQueue = findMaxPriorityQueue();
 				
 		printf("Time spent by exiting thread secs->%lf\tmillisec->%lf\n",running->totalTimeInSecs,running->totalTimeInMilliSecs);
@@ -226,7 +238,7 @@ void scheduler(int sig){
 			if(nextThreadToRun->firstCycle == 1){
 				clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&(nextThreadToRun->start));
 			}
-			printf("Swapping threads %d with %d\n", running->id, nextThreadToRun->id);
+			// printf("Swapping threads %d with %d\n", running->id, nextThreadToRun->id);
 			running = nextThreadToRun;
 			running->state = RUNNING;
 			clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&(nextThreadToRun->resume));	
@@ -257,7 +269,7 @@ void scheduler(int sig){
 				fprintf(stderr,"Problem with adding current thread to ready queue\n");
 			}
 		}
-		stateOfQueue(&queue[oldThread->priority]);
+		// stateOfQueue(&queue[oldThread->priority]);
 
 		int nextPreferredQueue = findMaxPriorityQueue();
 
@@ -271,7 +283,7 @@ void scheduler(int sig){
 			if(nextThreadToRun->firstCycle == 1){
 				clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&(nextThreadToRun->start));
 			}
-			printf("Swapping threads %d with %d\n", oldThread->id, nextThreadToRun->id);
+			// printf("Swapping threads %d with %d\n", oldThread->id, nextThreadToRun->id);
 			running = nextThreadToRun;
 			running->state = RUNNING;
 			clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&(nextThreadToRun->resume));
@@ -306,8 +318,7 @@ void Start_Thread(void *(*start)(void *), void *arg){
 void freeThread(TCB *threadToFree){
 	printf("Freeing up space of thread - %d\n",threadToFree->id);
 	if(threadToFree != NULL){
-		free(threadToFree->stack);
-		free(threadToFree->context);
+		free(threadToFree);
 		threadToFree = NULL;
 	}
 }
@@ -358,7 +369,7 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 		clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&(running->start));
 		clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&(running->resume));
 		running = mainThread;
-		printf("Main Thread\n");
+		// printf("Main Thread\n");
 
 		//setting the timer interrupt and signal handler
 		setupSignal();
@@ -418,8 +429,8 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 	*tid = thread->id;
 
 	addToQueue(thread, &queue[thread->priority]);
-	printf("Front thread at queue %d\n",queue[thread->priority].back->thread->id);
-	printf("\n** Adding Thread %d to Queue: %p** \n", thread->id,queue[thread->priority].back);
+	// printf("Front thread at queue %d\n",queue[thread->priority].back->thread->id);
+	// printf("\n** Adding Thread %d to Queue: %p** \n", thread->id,queue[thread->priority].back);
 
 	makecontext(thread->context, (void(*)(void))Start_Thread,2,function, arg);
 
@@ -433,16 +444,16 @@ int my_pthread_yield() {
 	printf("Thread %d is giving up CPU state: %d\n",running->id, running->state);
 	
 	if(running->state == WAITING){
-		printf("Adding the current thread to wait queue\n");
+		// printf("Adding the current thread to wait queue\n");
 		//add to waiting list
 		addToQueue(running,&waitingQueue);	
-		stateOfQueue(&waitingQueue);
+		// stateOfQueue(&waitingQueue);
 	}
 	else if( running->state == FINISHED){
-		printf("Adding the current finished thread to finished queue\n");
+		// printf("Adding the current finished thread to finished queue\n");
 		addToQueue(running,&finishedQueue);
 	}
-	printf("Raising a signal to call scheduler\n");
+	// printf("Raising a signal to call scheduler\n");
 	enableInterrupts();
 	raise(SIGVTALRM);	
 	return 0;
@@ -451,7 +462,7 @@ int my_pthread_yield() {
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
 	disableInterrupts();
-	printf("\n** Just Before Exit of thread %d with return value %d**\n",running->id, (int)value_ptr);
+	printf("\n** Thread %d exiting with return value %d**\n",running->id, (int)value_ptr);
 	if(running->id == 0){ //main thread
 		exit(0);
 	}
@@ -465,8 +476,7 @@ void my_pthread_exit(void *value_ptr) {
 		//deleting the waiting thread in waiting queue and adding into ready queue
 		deleteAParticularNodeFromQueue(running->waiting_id,&waitingQueue,&waitingThread);
 		if(waitingThread == NULL){
-			printf("Some problem in accessing waiting thread %d\n", running->waiting_id);
-			//call scheduler
+			printf("Exiting - Some problem in accessing waiting thread %d\n", running->waiting_id);
 			exit(1); //add some error
 		}
 		running->waiting_id = -1;
@@ -477,12 +487,10 @@ void my_pthread_exit(void *value_ptr) {
 	}
 	my_pthread_yield();
 	enableInterrupts();
-	 //if this causes prob, use global var
 };
 
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t tid, void **value_ptr) {
-	//interrupt disable
 	disableInterrupts();
 	if(tid > MAX_THREADS){
 		return NO_THREAD_ERROR;
@@ -547,7 +555,7 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
-	printf("Check is mutex locked? %d\n", mutex -> isLocked);
+	// printf("Check is mutex locked? %d\n", mutex -> isLocked);
     while(1){
         if(mutex -> isLocked == 1) {
             running -> mutex_acquired_thread_id = mutex->owningThread; 
@@ -580,7 +588,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
         my_pthread_mutex_init(&mutex, NULL);
     }
 
-	printf("Unlocking the mutex by thread %d with %d mutexes with owning thread %d\n",running->id, running->hasMutex,mutex->owningThread);
+	printf("Unlocking the mutex by thread %d \n",running->id);
     
     if(mutex->isLocked == 1 && running->hasMutex && mutex->owningThread == running->id) {
         shiftFromWaitingToReadyQueue(mutex);
@@ -597,7 +605,6 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-	// my_pthread_mutex_unlock(&mutex);
 	if(!mutex->isLocked && threadIdForCriticalSection == -1){
     	mutex = NULL;
 		return 0;
@@ -605,62 +612,3 @@ int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
 	printf("Cannot destroy Mutex, lock is acquired by some thread\n");
     return CANNOT_DESTORY_MUTEX_ERROR;
 };
-
-int unlockTheMutex(){
-    isMutexLocked = 0;
-	running->hasMutex = 0;
-	threadIdForCriticalSection = -1;
-    return 0;
-}
-
-void shiftFromWaitingToReadyQueue(my_pthread_mutex_t *mutex) {
-	struct ListNode *tempNode = mutex->waitingThreads.front;
-	while(tempNode != NULL){
-		TCB *waitingThread;
-		printf("Deleting waiting thread %d from waiting queue\n",tempNode->tid);
-		deleteAParticularNodeFromQueue(tempNode->tid,&waitingQueue,&waitingThread);
-		if(waitingThread != NULL){
-			printf("Moving Thread %d to Queue %d\n",waitingThread->id,waitingThread->priority);
-			addToQueue(waitingThread, &queue[waitingThread->priority]);
-		}
-		tempNode = tempNode->next;
-	}
-}
-
-//shika's code
-
-// void shiftFromWaitingToReadyQueue(my_pthread_mutex_t *mutex) {
-//     struct Node *tempNode = waitingQueue.front;
-//     struct Node *prevNode = NULL;
-    
-//     while(tempNode != NULL){
-//         if(isThisThreadInWaitingQueueForMutex(tempNode -> thread -> id, &(mutex -> waitingThreads))){			
-//             TCB *tempThread = tempNode -> thread;
-// 			//removing the mutex_acquired_thread_id
-// 			tempNode->thread->mutex_acquired_thread_id = -1;
-//             stateOfQueue(&waitingQueue);
-//             if(waitingQueue.back == waitingQueue.front){
-// 				waitingQueue.front = 0;
-// 				waitingQueue.back = 0;
-// 			}
-// 			else{
-// 				if(tempNode == waitingQueue.back){
-// 					waitingQueue.back = prevNode;
-//                     waitingQueue.back -> next = NULL;
-// 				}
-// 				else if(tempNode == waitingQueue.front){
-// 					waitingQueue.front = tempNode->next;
-// 				}
-// 				else{
-// 					prevNode->next = tempNode->next;
-// 				}
-// 			}
-//             printf("Moving thread %d from waiting queue to Queue %d\n",tempThread -> id,tempThread -> priority);
-//             addToQueue(tempThread, &queue[tempThread -> priority]);
-//         }
-//         else{
-// 			prevNode = tempNode;
-// 		}
-//         tempNode = tempNode->next;  
-//     }
-// }

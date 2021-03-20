@@ -23,12 +23,8 @@ void busyWait(int i) {
         k--;
     }
 }
-/***
- * funThread1 - Function for thread 1. This is the function that is executed when thread 1 is scheduled.
- * @param 	null
- * @return 	null
- */
-void *thread1() {
+
+void *threadFunc1() {
 	printf("Thread 1 is trying to lock the mutex\n");
     pthread_mutex_lock(&mutex);
 
@@ -44,12 +40,7 @@ void *thread1() {
     }
 }
 
-/***
- * funThread2 - Function for thread 2. This is the function that is executed when thread 2 is scheduled.
- * @param 	null
- * @return 	null
- */
-void *thread2() {
+void *threadFunc2() {
 	int i;
     printf("Thread 2 is trying to lock the mutex \n");
     pthread_mutex_lock(&mutex);
@@ -63,12 +54,7 @@ void *thread2() {
     printf("Thread  2 EXITING!!!!!!!!\n");
 }
 
-/***
- * funThread3 - Function for thread 3. This is the function that is executed when thread 3 is scheduled.
- * @param 	null
- * @return 	null
- */
-void *thread3() {
+void *threadFunc3() {
     int i;
     pthread_mutex_lock(&mutex);
     pthread_mutex_lock(&mutex2);
@@ -81,12 +67,8 @@ void *thread3() {
     pthread_mutex_unlock(&mutex);
     printf("Thread  3 is done!\n");
 }
-/***
- * funThread4 - Function for thread 4. This is the function that is executed when thread 4 is scheduled.
- * @param 	null
- * @return 	null
- */
-void *thread4() {
+
+void *threadFunc4() {
 	int i;
     pthread_mutex_lock(&mutex2);
     for(i = 0; i < 3 ; i++) {
@@ -104,10 +86,10 @@ int main(int argc, const char * argv[]) {
     pthread_mutex_init(&mutex, NULL);
     pthread_mutex_init(&mutex2, NULL);
     //Create threads
-    pthread_create(&t1, NULL, &thread1,NULL);
-    pthread_create(&t2, NULL, &thread2,NULL);
-    pthread_create(&t3, NULL, &thread3,NULL);
-    pthread_create(&t4, NULL, &thread4,NULL);
+    pthread_create(&t1, NULL, &threadFunc1,NULL);
+    pthread_create(&t2, NULL, &threadFunc2,NULL);
+    pthread_create(&t3, NULL, &threadFunc3,NULL);
+    pthread_create(&t4, NULL, &threadFunc4,NULL);
     //Call join on the threads
     pthread_join(t1,NULL);
     pthread_join(t2,NULL);

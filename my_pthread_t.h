@@ -1,8 +1,6 @@
 // File:	my_pthread_t.h
-// Author:	Yujie REN
-// Date:	09/23/2017
-
-// name:
+// Date:	3/19/2021
+// Author: Omkar Dubas, Praveen Pinjala, Shika Vyaghra
 // username of iLab:
 // iLab Server: 
 
@@ -11,8 +9,6 @@
 
 #ifndef MY_PTHREAD_T_H
 #define MY_PTHREAD_T_H
-
-#define _XOPEN_SOURCE 700
 
 /* include lib header files that you need here: */
 #include <unistd.h>
@@ -30,11 +26,9 @@
 #define MAX_THREADS 128
 
 typedef enum{
-	INIT,
 	READY,
 	RUNNING,
 	WAITING,
-	BLOCKED,
 	FINISHED
 }my_pthread_state;
 
