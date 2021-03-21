@@ -558,6 +558,10 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
 	// printf("Check is mutex locked? %d\n", mutex -> isLocked);
     while(1){
         if(mutex -> isLocked == 1) {
+            if(mutex->owningThread == running -> id) {
+                printf("Mutex is already locked by running thread\n");
+                return 0;
+            }
             running -> mutex_acquired_thread_id = mutex->owningThread; 
             running->state = WAITING;
             addToTidQueue(running-> id, &(mutex -> waitingThreads));
