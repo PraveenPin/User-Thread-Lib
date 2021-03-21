@@ -24,6 +24,7 @@ void busyWait(int i) {
 int threadFunc1(void*g) {
     printf("Thread 1 is trying to lock the mutex\n");
     my_pthread_mutex_lock(&mutex);
+    my_pthread_mutex_lock(&mutex);
     my_pthread_mutex_lock(&mutex2);
 	int i;
     for(i = 0; i < 2; i++){
