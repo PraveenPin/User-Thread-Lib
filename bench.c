@@ -24,20 +24,27 @@ void busyWait(int i) {
     }
 }
 
-void *threadFunc1() {
-	printf("Thread 1 is trying to lock the mutex\n");
+int threadFunc1(void*g) {
+    printf("Thread 1 is trying to lock the mutex\n");
     pthread_mutex_lock(&mutex);
-
     pthread_mutex_lock(&mutex2);
-    int i;
+	int i;
     for(i = 0; i < 2; i++){
+        // pthread_mutex_lock(&mutex);
         busyWait(1);
         pthread_mutex_unlock(&mutex);
         //printf("This is the first Thread 1\n");
     }
     pthread_mutex_unlock(&mutex2);
-    printf("This is the first Thread 1\n");
+    return 11;
+}
+
+void threadFunc(){
+    printf("Generic thread function has started\n");
+    for(int i = 0; i< 3;i++){
+        busyWait(0);
     }
+    printf("Generic thread function has completed\n");
 }
 
 void *threadFunc2() {
@@ -82,7 +89,7 @@ int main(int argc, const char * argv[]) {
 	struct timeval start, end;
 	float delta;
 	gettimeofday(&start, NULL);
-	pthread_t t1,t2,t3,t4;
+	pthread_t t1,t2,t3,t4,t5,t6,t7,t8;
     pthread_mutex_init(&mutex, NULL);
     pthread_mutex_init(&mutex2, NULL);
     //Create threads
@@ -90,11 +97,19 @@ int main(int argc, const char * argv[]) {
     pthread_create(&t2, NULL, &threadFunc2,NULL);
     pthread_create(&t3, NULL, &threadFunc3,NULL);
     pthread_create(&t4, NULL, &threadFunc4,NULL);
+    pthread_create(&t5, NULL, threadFunc,NULL);
+    pthread_create(&t6, NULL, threadFunc,NULL);
+    pthread_create(&t7, NULL, threadFunc,NULL);
+    pthread_create(&t8, NULL, threadFunc,NULL);
     //Call join on the threads
     pthread_join(t1,NULL);
     pthread_join(t2,NULL);
     pthread_join(t3,NULL);
     pthread_join(t4,NULL);
+    pthread_join(t5,NULL);
+    pthread_join(t6,NULL);
+    pthread_join(t7,NULL);
+    pthread_join(t8,NULL);
     //Destroying the mutex
     pthread_mutex_destroy(&mutex);
     pthread_mutex_destroy(&mutex2);
