@@ -38,12 +38,12 @@ typedef struct threadControlBlock {
 	char my_pthread_name[31]; //name for a thread if required
 	void *stack;
 	ucontext_t *context; // context for this thread
-	int id; // thread id
+	my_pthread_t id; // thread id
 	my_pthread_state state; //thread state
 	void **retVal; //return value from the function
-	int waiting_id; //Thread id of the thread waiting on this thread
+	my_pthread_t waiting_id; //Thread id of the thread waiting on this thread
 
-    int mutex_acquired_thread_id;
+    my_pthread_t mutex_acquired_thread_id;
     int priority; // thread priority
 	double timeSpentInSeconds,timeSpentInMilliSeconds,totalTimeInSecs,totalTimeInMilliSecs;
 	struct timespec created, start,resume, finish;
@@ -54,11 +54,9 @@ typedef struct threadControlBlock {
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
-	/* add something here */
-	pthread_mutex_t *mutex;
 	int isLocked;
 	int mutexattr;
-    int owningThread;
+    my_pthread_t owningThread;
     TidQueue waitingThreads;
 } my_pthread_mutex_t;
 

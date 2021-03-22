@@ -20,8 +20,6 @@ int threadCount=0;
 static Queue queue[NUMBER_OF_LEVELS];
 static Queue waitingQueue, finishedQueue;
 static TCB* running;
-static int threadIdForCriticalSection = -1;
-static int isMutexLocked = 0;
 static int totalCyclesElapsed = 0;
 static long timeSinceLastMaintenance = 0;
 int lengthOfLeastPriorityQueue = 0;
@@ -99,9 +97,9 @@ int inheritPriority(){
 					TCB *removedThread;
 					deleteAParticularNodeFromQueue(lockAcquiredThread->id, &queue[NUMBER_OF_LEVELS - 1],&removedThread);
 					if(removedThread != NULL){
-						printf("Removed Thread %d with priority %d by thread %d\n",removedThread->id, removedThread->priority,tempNode->thread->id);
+						printf("Removed Thread %ld with priority %d by thread %ld\n",removedThread->id, removedThread->priority,tempNode->thread->id);
 						removedThread->priority = tempNode->thread->priority;
-						printf("Moving Thread %d from Lowest Queue to Queue %d\n",removedThread->id, removedThread->priority);					
+						printf("Moving Thread %ld from Lowest Queue to Queue %d\n",removedThread->id, removedThread->priority);					
 						addToQueue(removedThread,&queue[removedThread->priority]);
 						stateOfQueue(&queue[0]);
 					}
@@ -134,12 +132,12 @@ void scheduleMaintenance(){
 			starvingMilliSecs = ((double)((999999999 - tempNode->thread->finish.tv_nsec) + (currentTime.tv_nsec)))/1000000;
 		}
 
-		printf("Thread %d was starving for %lf secs %lf millisecs\n",tempNode->thread->id,starvingSecs,starvingMilliSecs);
+		printf("Thread %ld was starving for %lf secs %lf millisecs\n",tempNode->thread->id,starvingSecs,starvingMilliSecs);
 
 		if(starvingMilliSecs >= 200){ //lengthOfLeastPriorityQueue*BASE_TIME_QUANTA*(NUMBER_OF_LEVELS-2)
 			currentThread->priority = 0;
 			addToQueue(currentThread,&queue[currentThread->priority]);
-			printf("Thread has starved more than the threshold, Inverted Priority of thread %d to 0\n",currentThread->id);
+			printf("Thread has starved more than the threshold, Inverted Priority of thread %ld to 0\n",currentThread->id);
 			if(queue[NUMBER_OF_LEVELS - 1].back == queue[NUMBER_OF_LEVELS - 1].front){
 				queue[NUMBER_OF_LEVELS - 1].front = 0;
 				queue[NUMBER_OF_LEVELS - 1].back = 0;
@@ -177,7 +175,7 @@ void initTimerInterrupt(int i){
 	timer_val.it_interval.tv_sec = 0;
 	
 	if(setitimer(ITIMER_VIRTUAL, &timer_val,NULL) == -1){
-		fprintf(stderr,"Error calling setitimer for thread %d\n", running->id);
+		fprintf(stderr,"Error calling setitimer for thread %ld\n", running->id);
 		printf("Error in Setting Timer\n");
 	}
 }
@@ -315,7 +313,7 @@ void Start_Thread(void *(*start)(void *), void *arg){
 }
 
 void freeThread(TCB *threadToFree){
-	printf("Freeing up space of thread - %d\n",threadToFree->id);
+	printf("Freeing up space of thread - %ld\n",threadToFree->id);
 	if(threadToFree != NULL){
 		free(threadToFree);
 	}
@@ -439,7 +437,7 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 int my_pthread_yield() {
 
 	disableInterrupts();
-	printf("Thread %d is giving up CPU state: %d\n",running->id, running->state);
+	printf("Thread %ld is giving up CPU state: %d\n",running->id, running->state);
 	
 	if(running->state == WAITING){
 		// printf("Adding the current thread to wait queue\n");
@@ -460,7 +458,7 @@ int my_pthread_yield() {
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) {
 	disableInterrupts();
-	printf("\n** Thread %d exiting with return value %d**\n",running->id, (int)value_ptr);
+	printf("\n** Thread %ld exiting with return value %d**\n",running->id, (int)value_ptr);
 	if(running->id == 0){ //main thread
 		exit(0);
 	}
@@ -474,7 +472,7 @@ void my_pthread_exit(void *value_ptr) {
 		//deleting the waiting thread in waiting queue and adding into ready queue
 		deleteAParticularNodeFromQueue(running->waiting_id,&waitingQueue,&waitingThread);
 		if(waitingThread == NULL){
-			printf("Exiting - Some problem in accessing waiting thread %d\n", running->waiting_id);
+			printf("Exiting - Some problem in accessing waiting thread %ld\n", running->waiting_id);
 			exit(1); //add some error
 		}
 		running->waiting_id = -1;
@@ -493,18 +491,18 @@ int my_pthread_join(my_pthread_t tid, void **value_ptr) {
 	if(tid > MAX_THREADS){
 		return NO_THREAD_ERROR;
 	}
-	printf("Searching in all queues for Thread %d\n",tid);
+	printf("Searching in all queues for Thread %ld\n",tid);
 	TCB* threadToWaitOn = findThreadByIdInMLFQ(tid);
 	if(threadToWaitOn == NULL){
 		threadToWaitOn = findThreadById(tid, &waitingQueue);
 		if(threadToWaitOn == NULL){
 			threadToWaitOn = findThreadById(tid, &finishedQueue);
 			if(threadToWaitOn == NULL){
-				fprintf(stderr,"No thread with id %d to wait on in any queue\n",tid);
+				fprintf(stderr,"No thread with id %ld to wait on in any queue\n",tid);
 				return NO_THREAD_ERROR;
 			}
 			else{
-				printf("Found Thread %d in finished queue\n",tid);
+				printf("Found Thread %ld in finished queue\n",tid);
 				if(threadToWaitOn->retVal != NULL){
 					*value_ptr = *threadToWaitOn->retVal;
 					freeThread(threadToWaitOn);
@@ -521,9 +519,9 @@ int my_pthread_join(my_pthread_t tid, void **value_ptr) {
 		fprintf(stderr,"Cannot wait on itself\n");
 		return -1;
 	}
-	printf("Thread %d started waiting on thread %d\n",running->id,threadToWaitOn->id);
+	printf("Thread %ld started waiting on thread %ld\n",running->id,threadToWaitOn->id);
 	if(threadToWaitOn->waiting_id >= 0 ){
-		fprintf(stderr,"Some other thread has joined this thread %d\n",tid);
+		fprintf(stderr,"Some other thread has joined this thread %ld\n",tid);
 		return CANNOT_JOIN_ERROR;
 	}
 	threadToWaitOn->waiting_id = running->id;
@@ -552,6 +550,10 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
     return 0;
 };
 
+// void detectDeadLock(my_pthread_mutex_t *mutex){
+// 	mutex->owningThread
+// }
+
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
 	// printf("Check is mutex locked? %d\n", mutex -> isLocked);
@@ -561,14 +563,15 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
                 printf("Mutex is already locked by running thread\n");
                 return 0;
             }
+			// detectDeadLock(mutex);
             running -> mutex_acquired_thread_id = mutex->owningThread; 
             running->state = WAITING;
             addToTidQueue(running-> id, &(mutex -> waitingThreads));
-			printf(" ************* Thread %d waiting for mutex lock on thread %d ************* \n",running->id, running->mutex_acquired_thread_id);
+			printf(" ************* Thread %ld waiting for mutex lock on thread %ld ************* \n",running->id, running->mutex_acquired_thread_id);
             my_pthread_yield();
         }
         else {
-            printf("Mutex is not locked, locking mutex by thread %d\n", running ->id );
+            printf("Mutex is not locked, locking mutex by thread %ld\n", running ->id );
             mutex -> isLocked = 1;
 			running->mutex_acquired_thread_id = -1;
             mutex->owningThread = running -> id;
@@ -591,7 +594,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
         my_pthread_mutex_init(&mutex, NULL);
     }
 
-	printf("Unlocking the mutex by thread %d \n",running->id);
+	printf("Unlocking the mutex by thread %ld \n",running->id);
     
     if(mutex->isLocked == 1 && running->hasMutex && mutex->owningThread == running->id) {
         shiftFromWaitingToReadyQueue(mutex);
@@ -602,13 +605,13 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 		return 0;
     }
 
-	printf("Mutex unlock failed by Thread %d\n",running->id);
+	printf("Mutex unlock failed by Thread %ld\n",running->id);
 	return DOES_NOT_HAVE_MUTEX_LOCK;
 };
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-	if(!mutex->isLocked && threadIdForCriticalSection == -1){
+	if(!mutex->isLocked && mutex->owningThread == -1){
     	mutex = NULL;
 		return 0;
 	}

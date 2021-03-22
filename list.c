@@ -5,7 +5,7 @@
 
 #include "list.h"
 
-int addToTidQueue(int tid, TidQueue *tidQueue){
+int addToTidQueue(long int tid, TidQueue *tidQueue){
     if(tidQueue->front == 0){
         tidQueue->front = malloc(sizeof(struct ListNode));
         tidQueue->front->tid = tid;
@@ -23,7 +23,7 @@ int addToTidQueue(int tid, TidQueue *tidQueue){
     return 1;
 }
 
-int isThisThreadInWaitingForMutex(int tid, TidQueue *waitingThreads){
+int isThisThreadInWaitingForMutex(long int tid, TidQueue *waitingThreads){
 	struct ListNode* node = waitingThreads->front;
 	while(node != NULL){
 		if (node->tid == tid){
@@ -50,7 +50,7 @@ void stateOfTidQueue(TidQueue *waitingThreads){
         printf("Waiting thread IDs on mutex: \t");
     }
     while(tempNode != NULL){
-        printf("%d\t",tempNode->tid);
+        printf("%ld\t",tempNode->tid);
         tempNode = tempNode->next;
     }
     printf("\n");
