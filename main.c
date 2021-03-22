@@ -109,7 +109,7 @@ int main(int argc, const char * argv[]) {
     my_pthread_join(t6,NULL);
     my_pthread_join(t7,NULL);
     my_pthread_join(t8,NULL);
-    // printf("Retvals - %d %d %d %d\n",*retVal1,*retVal2,*retVal3, *retVal4);
+    printf("Retvals - %d %d %d %d\n",retVal1,retVal2,retVal3, retVal4);
     
     my_pthread_mutex_destroy(&mutex);
     my_pthread_mutex_destroy(&mutex2);

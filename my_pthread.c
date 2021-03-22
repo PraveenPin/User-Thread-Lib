@@ -136,7 +136,7 @@ void scheduleMaintenance(){
 
 		printf("Thread %d was starving for %lf secs %lf millisecs\n",tempNode->thread->id,starvingSecs,starvingMilliSecs);
 
-		if(starvingMilliSecs >= lengthOfLeastPriorityQueue*BASE_TIME_QUANTA*(NUMBER_OF_LEVELS-2)){
+		if(starvingMilliSecs >= 200){ //lengthOfLeastPriorityQueue*BASE_TIME_QUANTA*(NUMBER_OF_LEVELS-2)
 			currentThread->priority = 0;
 			addToQueue(currentThread,&queue[currentThread->priority]);
 			printf("Thread has starved more than the threshold, Inverted Priority of thread %d to 0\n",currentThread->id);
@@ -223,7 +223,6 @@ void scheduler(int sig){
 	
 	if(running->state == FINISHED){
 		//we have to decide whther to free this or not
-		freeThread(running);
 		int nextPreferredQueue = findMaxPriorityQueue();
 				
 		printf("Time spent by exiting thread secs->%lf\tmillisec->%lf\n",running->totalTimeInSecs,running->totalTimeInMilliSecs);
@@ -319,7 +318,6 @@ void freeThread(TCB *threadToFree){
 	printf("Freeing up space of thread - %d\n",threadToFree->id);
 	if(threadToFree != NULL){
 		free(threadToFree);
-		threadToFree = NULL;
 	}
 }
 
@@ -469,7 +467,7 @@ void my_pthread_exit(void *value_ptr) {
 	running->state = FINISHED;
 	if(running->waiting_id >= 0){
 		if(value_ptr != NULL){
-			*running->retVal = &value_ptr;
+			*running->retVal = value_ptr;
 		}
 		//loop the waiting Queue for thread and set state to ready
 		TCB* waitingThread;
@@ -509,6 +507,7 @@ int my_pthread_join(my_pthread_t tid, void **value_ptr) {
 				printf("Found Thread %d in finished queue\n",tid);
 				if(threadToWaitOn->retVal != NULL){
 					*value_ptr = *threadToWaitOn->retVal;
+					freeThread(threadToWaitOn);
 				}
 				return 0;
 			}
