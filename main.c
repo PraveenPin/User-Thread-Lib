@@ -6,6 +6,7 @@
 #include <signal.h>
 
 my_pthread_mutex_t mutex, mutex2;
+int global_var1 = 0, global_var2 = 0;
 /***
  * busyWait - Function to mimic sleep() as sleep() wakes on alarm
  * @param 	i 	int 	Approx. duration of wait
@@ -28,10 +29,12 @@ int threadFunc1(void*g) {
 	int i;
     for(i = 0; i < 2; i++){
         my_pthread_mutex_lock(&mutex);
+        global_var1++;
         busyWait(1);
         my_pthread_mutex_unlock(&mutex);
         //printf("This is the first Thread 1\n");
     }
+    global_var2++;
     my_pthread_mutex_unlock(&mutex2);
     return 11;
 }
@@ -45,6 +48,7 @@ void threadFunc2() {
         busyWait(2);
         //printf("This is the second Thread 2\n");
     }
+    global_var1++;
     printf("Thread 2 is trying to unlock the mutex\n");
     my_pthread_mutex_unlock(&mutex);
     printf("Thread  2 EXITING!!!!!!!!\n");
@@ -57,8 +61,10 @@ int threadFunc3() {
     for(i = 0; i < 3 ; i++) {
         busyWait(3);
         //printf("This is the third Thread 3\n");
+        global_var2++;
         my_pthread_mutex_unlock(&mutex2);
     }
+    global_var1++;
     my_pthread_mutex_unlock(&mutex);
     printf("Thread  3 is done!\n");
     return 777;
@@ -72,6 +78,7 @@ void threadFunc4() {
         busyWait(4);
         //printf("This is the fourth Thread 4\n");
     }
+    global_var2++;
     my_pthread_mutex_unlock(&mutex2);
 }
 
@@ -110,6 +117,7 @@ int main(int argc, const char * argv[]) {
     my_pthread_join(t7,NULL);
     my_pthread_join(t8,NULL);
     printf("Retvals - %d %d %d %d\n",retVal1,retVal2,retVal3, retVal4);
+    printf("Global variables - %d %d\n",global_var1,global_var2);
     
     my_pthread_mutex_destroy(&mutex);
     my_pthread_mutex_destroy(&mutex2);

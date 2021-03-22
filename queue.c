@@ -90,6 +90,9 @@ void deleteAParticularNodeFromQueue(my_pthread_t tid, Queue *queue, TCB **thread
             }
         }
     }
+    else{
+        *thread = NULL;
+    }
 }
 
 
