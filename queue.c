@@ -56,13 +56,13 @@ void stateOfQueue(Queue *queue){
         printf("Queue %d ->\t",queue->front->thread->priority);
     }
     while(tempNode != NULL){
-        printf("%d\t",tempNode->thread->id);
+        printf("%ld\t",tempNode->thread->id);
         tempNode = tempNode->next;
     }
     printf("\n");
 }
 
-void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
+void deleteAParticularNodeFromQueue(my_pthread_t tid, Queue *queue, TCB **thread){
     struct Node *tempNode = queue->front;
     struct Node *prevNode = NULL;
     while(tempNode != NULL && tempNode->thread->id != tid){
@@ -89,6 +89,9 @@ void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread){
                 prevNode->next = tempNode->next;
             }
         }
+    }
+    else{
+        *thread = NULL;
     }
 }
 

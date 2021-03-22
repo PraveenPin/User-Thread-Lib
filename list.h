@@ -2,7 +2,7 @@
 #define List_H
 
 struct ListNode{
-    int tid;
+    long int tid;
     struct ListNode *next;
 };
 
@@ -16,9 +16,9 @@ typedef struct {
     struct Node *back;
 }TCBQueue;
 
-int addToTidQueue(int tid, TidQueue *waitingThreads);
+int addToTidQueue(long int tid, TidQueue *waitingThreads);
 
-int isThisThreadWaitingForMutex(int tid, TidQueue *waitingThreads);
+int isThisThreadWaitingForMutex(long int tid, TidQueue *waitingThreads);
 
 void emptyTidQueue(TidQueue *waitingThreads);
 

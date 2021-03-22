@@ -1,8 +1,6 @@
 // File:	my_pthread_t.h
-// Author:	Yujie REN
-// Date:	09/23/2017
-
-// name:
+// Date:	3/19/2021
+// Author: Omkar Dubas, Praveen Pinjala, Shika Vyaghra
 // username of iLab:
 // iLab Server: 
 
@@ -11,8 +9,6 @@
 
 #ifndef MY_PTHREAD_T_H
 #define MY_PTHREAD_T_H
-
-#define _XOPEN_SOURCE 700
 
 /* include lib header files that you need here: */
 #include <unistd.h>
@@ -30,11 +26,9 @@
 #define MAX_THREADS 128
 
 typedef enum{
-	INIT,
 	READY,
 	RUNNING,
 	WAITING,
-	BLOCKED,
 	FINISHED
 }my_pthread_state;
 
@@ -44,12 +38,12 @@ typedef struct threadControlBlock {
 	char my_pthread_name[31]; //name for a thread if required
 	void *stack;
 	ucontext_t *context; // context for this thread
-	int id; // thread id
+	my_pthread_t id; // thread id
 	my_pthread_state state; //thread state
 	void **retVal; //return value from the function
-	int waiting_id; //Thread id of the thread waiting on this thread
+	my_pthread_t waiting_id; //Thread id of the thread waiting on this thread
 
-    int mutex_acquired_thread_id;
+    my_pthread_t mutex_acquired_thread_id;
     int priority; // thread priority
 	double timeSpentInSeconds,timeSpentInMilliSeconds,totalTimeInSecs,totalTimeInMilliSecs;
 	struct timespec created, start,resume, finish;
@@ -60,11 +54,9 @@ typedef struct threadControlBlock {
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
-	/* add something here */
-	pthread_mutex_t *mutex;
 	int isLocked;
 	int mutexattr;
-    int owningThread;
+    my_pthread_t owningThread;
     TidQueue waitingThreads;
 } my_pthread_mutex_t;
 

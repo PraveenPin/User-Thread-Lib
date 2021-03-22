@@ -23,33 +23,31 @@ void busyWait(int i) {
         k--;
     }
 }
-/***
- * funThread1 - Function for thread 1. This is the function that is executed when thread 1 is scheduled.
- * @param 	null
- * @return 	null
- */
-void *thread1() {
-	printf("Thread 1 is trying to lock the mutex\n");
-    pthread_mutex_lock(&mutex);
 
+int threadFunc1(void*g) {
+    printf("Thread 1 is trying to lock the mutex\n");
+    pthread_mutex_lock(&mutex);
     pthread_mutex_lock(&mutex2);
-    int i;
+	int i;
     for(i = 0; i < 2; i++){
+        // pthread_mutex_lock(&mutex);
         busyWait(1);
         pthread_mutex_unlock(&mutex);
         //printf("This is the first Thread 1\n");
     }
     pthread_mutex_unlock(&mutex2);
-    printf("This is the first Thread 1\n");
-    }
+    return 11;
 }
 
-/***
- * funThread2 - Function for thread 2. This is the function that is executed when thread 2 is scheduled.
- * @param 	null
- * @return 	null
- */
-void *thread2() {
+void threadFunc(){
+    printf("Generic thread function has started\n");
+    for(int i = 0; i< 3;i++){
+        busyWait(0);
+    }
+    printf("Generic thread function has completed\n");
+}
+
+void *threadFunc2() {
 	int i;
     printf("Thread 2 is trying to lock the mutex \n");
     pthread_mutex_lock(&mutex);
@@ -63,12 +61,7 @@ void *thread2() {
     printf("Thread  2 EXITING!!!!!!!!\n");
 }
 
-/***
- * funThread3 - Function for thread 3. This is the function that is executed when thread 3 is scheduled.
- * @param 	null
- * @return 	null
- */
-void *thread3() {
+void *threadFunc3() {
     int i;
     pthread_mutex_lock(&mutex);
     pthread_mutex_lock(&mutex2);
@@ -81,12 +74,8 @@ void *thread3() {
     pthread_mutex_unlock(&mutex);
     printf("Thread  3 is done!\n");
 }
-/***
- * funThread4 - Function for thread 4. This is the function that is executed when thread 4 is scheduled.
- * @param 	null
- * @return 	null
- */
-void *thread4() {
+
+void *threadFunc4() {
 	int i;
     pthread_mutex_lock(&mutex2);
     for(i = 0; i < 3 ; i++) {
@@ -100,19 +89,27 @@ int main(int argc, const char * argv[]) {
 	struct timeval start, end;
 	float delta;
 	gettimeofday(&start, NULL);
-	pthread_t t1,t2,t3,t4;
+	pthread_t t1,t2,t3,t4,t5,t6,t7,t8;
     pthread_mutex_init(&mutex, NULL);
     pthread_mutex_init(&mutex2, NULL);
     //Create threads
-    pthread_create(&t1, NULL, &thread1,NULL);
-    pthread_create(&t2, NULL, &thread2,NULL);
-    pthread_create(&t3, NULL, &thread3,NULL);
-    pthread_create(&t4, NULL, &thread4,NULL);
+    pthread_create(&t1, NULL, &threadFunc1,NULL);
+    pthread_create(&t2, NULL, &threadFunc2,NULL);
+    pthread_create(&t3, NULL, &threadFunc3,NULL);
+    pthread_create(&t4, NULL, &threadFunc4,NULL);
+    pthread_create(&t5, NULL, threadFunc,NULL);
+    pthread_create(&t6, NULL, threadFunc,NULL);
+    pthread_create(&t7, NULL, threadFunc,NULL);
+    pthread_create(&t8, NULL, threadFunc,NULL);
     //Call join on the threads
     pthread_join(t1,NULL);
     pthread_join(t2,NULL);
     pthread_join(t3,NULL);
     pthread_join(t4,NULL);
+    pthread_join(t5,NULL);
+    pthread_join(t6,NULL);
+    pthread_join(t7,NULL);
+    pthread_join(t8,NULL);
     //Destroying the mutex
     pthread_mutex_destroy(&mutex);
     pthread_mutex_destroy(&mutex2);

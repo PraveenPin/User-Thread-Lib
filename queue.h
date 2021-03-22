@@ -21,6 +21,6 @@ int isQueueEmpty(Queue *queue);
 
 void stateOfQueue(Queue *queue);
 
-void deleteAParticularNodeFromQueue(int tid, Queue *queue, TCB **thread);
+void deleteAParticularNodeFromQueue(my_pthread_t tid, Queue *queue, TCB **thread);
 
 #endif
