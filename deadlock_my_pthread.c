@@ -2,7 +2,7 @@
 // Date:	3/19/2021
 // Author: Omkar Dubas, Praveen Pinjala, Shikha Vyaghra
 // username of iLab:
-// iLab Server: ilab1
+// iLab Server:
 
 #include <signal.h>
 #include "my_pthread_t.h"
@@ -550,6 +550,18 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
     return 0;
 };
 
+int detectDeadLock(my_pthread_mutex_t *mutex){
+	TCB *thread = findThreadById(mutex->owningThread,&waitingQueue);
+	if(thread != NULL && thread->mutex_acquired_thread_id == running->id){
+		printf("Deadlock detected between threads %ld and %ld\n",running->id, thread->id);
+		mutex->owningThread = running->id;
+        addToTidQueue(thread->id, &(mutex -> waitingThreads));
+		running->hasMutex++;
+		return 1;
+	}
+	return 0;
+}
+
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
 	// printf("Check is mutex locked? %d\n", mutex -> isLocked);
@@ -559,6 +571,9 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
                 printf("Mutex is already locked by running thread\n");
                 return 0;
             }
+			if(detectDeadLock(mutex)){
+				break;
+			}
             running -> mutex_acquired_thread_id = mutex->owningThread; 
             running->state = WAITING;
             addToTidQueue(running-> id, &(mutex -> waitingThreads));

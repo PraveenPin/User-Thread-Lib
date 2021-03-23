@@ -5,36 +5,46 @@
 #include <sys/time.h>
 #include <signal.h>
 
+my_pthread_mutex_t mutex, mutex2;
+
 /***
  * busyWait - Function to mimic sleep() as sleep() wakes on alarm
- * @param   i   int     Approx. duration of wait
- * @return  null
+ * @param 	i 	int 	Approx. duration of wait
+ * @return 	null
  */
 void busyWait(int i) {
-    int j = 21474;
-    i = i < 0 ? 1 : i;
+	int j = 21474;
+	i = i < 0 ? 1 : i;
     int k = j*j;
-    while (k>0) {
+	while (k>0) {
         k--;
-    }
+	}
     
 }
 
 int threadFunc1(void*g) {
-    int i;
+	int i;
+    my_pthread_mutex_lock(&mutex);
     for(i = 0; i < 2; i++){
         busyWait(1);
         //printf("This is the first Thread 1\n");
     }
+    my_pthread_mutex_lock(&mutex2);
+    my_pthread_mutex_unlock(&mutex2);
+    my_pthread_mutex_unlock(&mutex);
     return 11;
 }
 
 void threadFunc2() {
     int i;
+    my_pthread_mutex_lock(&mutex2);
     for(i = 0; i < 2 ; i++) {
         busyWait(2);
         //printf("This is the second Thread 2\n");
     }
+    my_pthread_mutex_lock(&mutex);
+    my_pthread_mutex_unlock(&mutex);
+    my_pthread_mutex_unlock(&mutex2);
     printf("Thread  2 EXITING!!!!!!!!\n");
 }
 
@@ -51,7 +61,7 @@ int threadFunc3() {
 }
 
 void threadFunc4() {
-    int i;
+	int i;
     for(i = 0; i < 3 ; i++) {
         busyWait(4);
         //printf("This is the fourth Thread 4\n");
@@ -59,11 +69,13 @@ void threadFunc4() {
 }
 
 int main(int argc, const char * argv[]) {
-    struct timeval start, end;
-    float delta;
-    gettimeofday(&start, NULL);
-    my_pthread_t t1,t2,t3,t4;
+	struct timeval start, end;
+	float delta;
+	gettimeofday(&start, NULL);
+	my_pthread_t t1,t2,t3,t4;
     int *retVal1, *retVal2, *retVal3, *retVal4;
+    my_pthread_mutex_init(&mutex, NULL);
+    my_pthread_mutex_init(&mutex2, NULL);
     //Create threads
     my_pthread_create(&t1, NULL, &threadFunc1,NULL);
     my_pthread_create(&t2, NULL, &threadFunc2,NULL);
@@ -75,6 +87,9 @@ int main(int argc, const char * argv[]) {
     my_pthread_join(t3, &retVal3);
     my_pthread_join(t4, &retVal4);
     // printf("Retvals - %d %d %d %d\n",*retVal1,*retVal2,*retVal3, *retVal4);
+    
+    my_pthread_mutex_destroy(&mutex);
+    my_pthread_mutex_destroy(&mutex2);
     gettimeofday(&end, NULL);
     delta = (((end.tv_sec  - start.tv_sec)*1000) + ((end.tv_usec - start.tv_usec)*0.001));
     printf("Execution time in Milliseconds: %f\n",delta);    
