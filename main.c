@@ -22,6 +22,8 @@ void busyWait(int i) {
     
 }
 
+int j = -555;
+
 int threadFunc1(void*g) {
     printf("Thread 1 is trying to lock the mutex\n");
     my_pthread_mutex_lock(&mutex);
@@ -36,7 +38,7 @@ int threadFunc1(void*g) {
     }
     global_var2++;
     my_pthread_mutex_unlock(&mutex2);
-    return 11;
+    my_pthread_exit(-20);
 }
 
 void threadFunc2() {
@@ -52,9 +54,10 @@ void threadFunc2() {
     printf("Thread 2 is trying to unlock the mutex\n");
     my_pthread_mutex_unlock(&mutex);
     printf("Thread  2 EXITING!!!!!!!!\n");
+    my_pthread_exit(NULL);
 }
 
-int threadFunc3() {
+void threadFunc3() {
     int i;
     my_pthread_mutex_lock(&mutex);
     my_pthread_mutex_lock(&mutex2);
@@ -67,11 +70,21 @@ int threadFunc3() {
     global_var1++;
     my_pthread_mutex_unlock(&mutex);
     printf("Thread  3 is done!\n");
-    return 777;
+    my_pthread_exit(&j);
 
 }
 
-void threadFunc4() {
+int threadFunc5() {
+    int i;
+    for(i = 0; i < 3 ; i++) {
+        busyWait(3);
+        //printf("This is the third Thread 3\n");
+    }
+    printf("Thread  5 is done!\n");
+    return 777;
+}
+
+int threadFunc4() {
 	int i;
     my_pthread_mutex_lock(&mutex2);
     for(i = 0; i < 3 ; i++) {
@@ -80,6 +93,7 @@ void threadFunc4() {
     }
     global_var2++;
     my_pthread_mutex_unlock(&mutex2);
+    return 11;
 }
 
 void threadFunc(){
@@ -102,21 +116,23 @@ int main(int argc, const char * argv[]) {
     my_pthread_create(&t1, NULL, &threadFunc1,NULL);
     my_pthread_create(&t2, NULL, &threadFunc2,NULL);
     my_pthread_create(&t3, NULL, &threadFunc3,NULL);
-    my_pthread_create(&t4, NULL, &threadFunc4,NULL);
+    my_pthread_create(&t4, NULL, &threadFunc,NULL);
     my_pthread_create(&t5, NULL, &threadFunc,NULL);
     my_pthread_create(&t6, NULL, &threadFunc,NULL);
     my_pthread_create(&t7, NULL, &threadFunc,NULL);
-    my_pthread_create(&t8, NULL, &threadFunc,NULL);
 
     my_pthread_join(t1, &retVal1);
     my_pthread_join(t2, &retVal2);
     my_pthread_join(t3, &retVal3);
-    my_pthread_join(t4, &retVal4);
+    my_pthread_join(t4,NULL);
     my_pthread_join(t5,NULL);
     my_pthread_join(t6,NULL);
     my_pthread_join(t7,NULL);
-    my_pthread_join(t8,NULL);
-    printf("Retvals - %d %d %d %d\n",retVal1,retVal2,retVal3, retVal4);
+
+
+    my_pthread_create(&t8, NULL, &threadFunc4,NULL);
+    my_pthread_join(t8,&retVal4);
+    printf("Retvals - %d %d %p %d\n",retVal1,retVal2,retVal3,retVal4);
     printf("Global variables - %d %d\n",global_var1,global_var2);
     
     my_pthread_mutex_destroy(&mutex);

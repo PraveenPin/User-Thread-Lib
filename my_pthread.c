@@ -307,9 +307,10 @@ void setupSignal(){
 	}
 }	
 
-void Start_Thread(void *(*start)(void *), void *arg){
+void* Start_Thread(void *(*start)(void *), void *arg){
 	void *retVal = start((void *)arg);
 	my_pthread_exit(retVal);
+	return retVal;
 }
 
 void freeThread(TCB *threadToFree){
@@ -466,6 +467,9 @@ void my_pthread_exit(void *value_ptr) {
 	if(running->waiting_id >= 0){
 		if(value_ptr != NULL){
 			*running->retVal = value_ptr;
+		}
+		else{
+			*running->retVal = NULL;
 		}
 		//loop the waiting Queue for thread and set state to ready
 		TCB* waitingThread;
