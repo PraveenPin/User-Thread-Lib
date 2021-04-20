@@ -134,7 +134,7 @@ void scheduleMaintenance(){
 
 		printf("Thread %ld was starving for %lf secs %lf millisecs\n",tempNode->thread->id,starvingSecs,starvingMilliSecs);
 
-		if(starvingMilliSecs >= 200){ //lengthOfLeastPriorityQueue*BASE_TIME_QUANTA*(NUMBER_OF_LEVELS-2)
+		if(starvingMilliSecs >= 100){ //lengthOfLeastPriorityQueue*BASE_TIME_QUANTA*(NUMBER_OF_LEVELS-2)
 			currentThread->priority = 0;
 			addToQueue(currentThread,&queue[currentThread->priority]);
 			printf("Thread has starved more than the threshold, Inverted Priority of thread %ld to 0\n",currentThread->id);
@@ -213,7 +213,7 @@ void scheduler(int sig){
 
 	timeSinceLastMaintenance += currentTimeSlice;
 	//check for maintenance
-	if(timeSinceLastMaintenance >= 1000){
+	if(timeSinceLastMaintenance >= 250){
 		//call maintenance cycle
 		timeSinceLastMaintenance = 0;
 		scheduleMaintenance();
