@@ -90,7 +90,7 @@ int findMaxPriorityQueue(){
 }
 
 int inheritPriority(){
-	printf("******* Executing Priority Inheritance *******\n");
+	//printf("******* Executing Priority Inheritance *******\n");
 	struct Node *tempNode = waitingQueue.front;
 	while(tempNode != NULL){
 		if(tempNode->thread->mutex_acquired_thread_id > -1 && tempNode->thread->mutex_acquired_thread_id != running->id){
@@ -99,9 +99,9 @@ int inheritPriority(){
 					TCB *removedThread;
 					deleteAParticularNodeFromQueue(lockAcquiredThread->id, &queue[NUMBER_OF_LEVELS - 1],&removedThread);
 					if(removedThread != NULL){
-						printf("Removed Thread %d with priority %d by thread %d\n",removedThread->id, removedThread->priority,tempNode->thread->id);
+						//printf("Removed Thread %d with priority %d by thread %d\n",removedThread->id, removedThread->priority,tempNode->thread->id);
 						removedThread->priority = tempNode->thread->priority;
-						printf("Moving Thread %d from Lowest Queue to Queue %d\n",removedThread->id, removedThread->priority);					
+						//printf("Moving Thread %d from Lowest Queue to Queue %d\n",removedThread->id, removedThread->priority);					
 						addToQueue(removedThread,&queue[removedThread->priority]);
 						stateOfQueue(&queue[0]);
 					}
@@ -113,7 +113,7 @@ int inheritPriority(){
 }
 
 void scheduleMaintenance(){
-	printf("*********************** Calling Maintenance ***********************\n");
+	//printf("*********************** Calling Maintenance ***********************\n");
 	
 	inheritPriority();
 	// printf("******* Executing Ageing *******\n");
@@ -134,12 +134,12 @@ void scheduleMaintenance(){
 			starvingMilliSecs = ((double)((999999999 - tempNode->thread->finish.tv_nsec) + (currentTime.tv_nsec)))/1000000;
 		}
 
-		printf("Thread %d was starving for %lf secs %lf millisecs\n",tempNode->thread->id,starvingSecs,starvingMilliSecs);
+		//printf("Thread %d was starving for %lf secs %lf millisecs\n",tempNode->thread->id,starvingSecs,starvingMilliSecs);
 
 		if(starvingMilliSecs >= 200){
 			currentThread->priority = 0;
 			addToQueue(currentThread,&queue[currentThread->priority]);
-			printf("Thread has starved more than the threshold, Inverted Priority of thread %d to 0\n",currentThread->id);
+			//printf("Thread has starved more than the threshold, Inverted Priority of thread %d to 0\n",currentThread->id);
 			if(queue[NUMBER_OF_LEVELS - 1].back == queue[NUMBER_OF_LEVELS - 1].front){
 				queue[NUMBER_OF_LEVELS - 1].front = 0;
 				queue[NUMBER_OF_LEVELS - 1].back = 0;
@@ -226,7 +226,7 @@ void scheduler(int sig){
 		freeThread(running);
 		int nextPreferredQueue = findMaxPriorityQueue();
 				
-		printf("Time spent by exiting thread secs->%lf\tmillisec->%lf\n",running->totalTimeInSecs,running->totalTimeInMilliSecs);
+		//printf("Time spent by exiting thread secs->%lf\tmillisec->%lf\n",running->totalTimeInSecs,running->totalTimeInMilliSecs);
 
 		if(nextPreferredQueue == -1){
 			printf("All the queue are empty\n");
@@ -265,7 +265,7 @@ void scheduler(int sig){
 			addToQueue(oldThread,&queue[oldThread->priority]);
 
 			if(isQueueEmpty(&queue[oldThread->priority])){
-				printf("Problem with the queue or thread\n ");
+				//printf("Problem with the queue or thread\n ");
 				fprintf(stderr,"Problem with adding current thread to ready queue\n");
 			}
 		}
