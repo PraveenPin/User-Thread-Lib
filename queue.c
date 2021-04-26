@@ -53,13 +53,13 @@ int isQueueEmpty(Queue *queue){
 void stateOfQueue(Queue *queue){
     struct Node *tempNode = queue->front;
     if(tempNode != NULL){
-        printf("Queue %d ->\t",queue->front->thread->priority);
+        // printf("Queue %d ->\t",queue->front->thread->priority);
     }
     while(tempNode != NULL){
-        printf("%ld\t",tempNode->thread->id);
+        // printf("%ld\t",tempNode->thread->id);
         tempNode = tempNode->next;
     }
-    printf("\n");
+    // printf("\n");
 }
 
 void deleteAParticularNodeFromQueue(my_pthread_t tid, Queue *queue, TCB **thread){
