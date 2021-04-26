@@ -560,17 +560,17 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
     while(1){
         if(mutex -> isLocked == 1) {
             if(mutex->owningThread == running -> id) {
-                printf("Mutex is already locked by running thread\n");
+//                printf("Mutex is already locked by running thread\n");
                 return 0;
             }
             running -> mutex_acquired_thread_id = mutex->owningThread; 
             running->state = WAITING;
             addToTidQueue(running-> id, &(mutex -> waitingThreads));
-			printf(" ************* Thread %ld waiting for mutex lock on thread %ld ************* \n",running->id, running->mutex_acquired_thread_id);
+//			printf(" ************* Thread %ld waiting for mutex lock on thread %ld ************* \n",running->id, running->mutex_acquired_thread_id);
             my_pthread_yield();
         }
         else {
-            printf("Mutex is not locked, locking mutex by thread %ld\n", running ->id );
+  //          printf("Mutex is not locked, locking mutex by thread %ld\n", running ->id );
             mutex -> isLocked = 1;
 			running->mutex_acquired_thread_id = -1;
             mutex->owningThread = running -> id;
@@ -593,7 +593,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
         my_pthread_mutex_init(&mutex, NULL);
     }
 
-	printf("Unlocking the mutex by thread %ld \n",running->id);
+//	printf("Unlocking the mutex by thread %ld \n",running->id);
     
     if(mutex->isLocked == 1 && running->hasMutex && mutex->owningThread == running->id) {
         shiftFromWaitingToReadyQueue(mutex);
@@ -604,7 +604,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 		return 0;
     }
 
-	printf("Mutex unlock failed by Thread %ld\n",running->id);
+//	printf("Mutex unlock failed by Thread %ld\n",running->id);
 	return DOES_NOT_HAVE_MUTEX_LOCK;
 };
 
