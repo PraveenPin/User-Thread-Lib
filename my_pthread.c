@@ -393,6 +393,7 @@ int my_pthread_create(my_pthread_t * tid, pthread_attr_t * attr, void *(*functio
 	thread->hasMutex = 0;
 	thread->firstCycle = 1;
 	thread->priority = 0;
+	thread->retVal = NULL;
 	thread->timeSpentInMilliSeconds = 0;
 	thread->timeSpentInSeconds = 0;
 	thread->totalTimeInMilliSecs = 0;
@@ -465,11 +466,11 @@ void my_pthread_exit(void *value_ptr) {
 	}
 	running->state = FINISHED;
 	if(running->waiting_id >= 0){
-		if(value_ptr != NULL){
+		if(value_ptr != NULL && running->retVal != NULL){
 			*running->retVal = value_ptr;
 		}
 		else{
-			*running->retVal = NULL;
+			running->retVal = NULL;
 		}
 		//loop the waiting Queue for thread and set state to ready
 		TCB* waitingThread;

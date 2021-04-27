@@ -20,33 +20,35 @@ void busyWait(int i) {
     
 }
 
-int threadFunc1(void*g) {
+void *threadFunc1(void*g) {
     int i;
     for(i = 0; i < 2; i++){
         busyWait(1);
         //printf("This is the first Thread 1\n");
     }
-    return 11;
+    int* ptr = malloc(sizeof(int));
+    *ptr = 11;
+    my_pthread_exit(ptr);
 }
 
-void threadFunc2() {
+void *threadFunc2(void *g) {
     int i;
     for(i = 0; i < 2 ; i++) {
         busyWait(2);
         //printf("This is the second Thread 2\n");
     }
     printf("Thread  2 EXITING!!!!!!!!\n");
+    my_pthread_exit(NULL);
 }
 
-int threadFunc3() {
+void *threadFunc3(void *g) {
     int i;
     
     for(i = 0; i < 3 ; i++) {
         busyWait(3);
         //printf("This is the third Thread 3\n");
     }
-    printf("Thread  3 is done!\n");
-    return 777;
+    my_pthread_exit(NULL);
 
 }
 
@@ -63,18 +65,18 @@ int main(int argc, const char * argv[]) {
     float delta;
     gettimeofday(&start, NULL);
     my_pthread_t t1,t2,t3,t4;
-    int *retVal1, *retVal2, *retVal3, *retVal4;
+    int *retVal1,*retVal3;
     //Create threads
     my_pthread_create(&t1, NULL, &threadFunc1,NULL);
-    my_pthread_create(&t2, NULL, &threadFunc2,NULL);
+    my_pthread_create(&t2, NULL, &threadFunc1,NULL);
     my_pthread_create(&t3, NULL, &threadFunc3,NULL);
-    my_pthread_create(&t4, NULL, &threadFunc4,NULL);
+    my_pthread_create(&t4, NULL, &threadFunc3,NULL);
 
-    my_pthread_join(t1, &retVal1);
-    my_pthread_join(t2, &retVal2);
-    my_pthread_join(t3, &retVal3);
-    my_pthread_join(t4, &retVal4);
-    // printf("Retvals - %d %d %d %d\n",*retVal1,*retVal2,*retVal3, *retVal4);
+    my_pthread_join(t1, NULL);
+    my_pthread_join(t2, &retVal1);
+    my_pthread_join(t3, NULL);
+    my_pthread_join(t4, &retVal3);
+    printf("Retvals - %d %d\n",*retVal1,*retVal3);
     gettimeofday(&end, NULL);
     delta = (((end.tv_sec  - start.tv_sec)*1000) + ((end.tv_usec - start.tv_usec)*0.001));
     printf("Execution time in Milliseconds: %f\n",delta);    
